@@ -44,7 +44,7 @@
   .arrow[disabled] { opacity: 0; pointer-events: none; }
 
   .under { position: fixed; left: 50%; bottom: 66px; transform: translateX(-50%); z-index: 4; transition: opacity .5s var(--ease); }
-  [data-state="open"] .under .open-ed, [data-state="front"] .under .close-ed, [data-state="back"] .under .close-ed { display: none; }
+  [data-state="open"] .under .open-ed, [data-state="pages"] .under .open-ed, [data-state="front"] .under .close-ed, [data-state="back"] .under .close-ed { display: none; }
 
   /* status bar */
   footer { position: fixed; bottom: 0; inset-inline: 0; height: 44px; border-top: 1px solid var(--line); display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; padding: 0 20px; font-size: 13px; color: var(--soft); background: #fff; z-index: 5; }
@@ -105,7 +105,7 @@
 
 <video id="film" playsinline preload="auto" poster="poster.jpg"></video>
 
-<script>window.BOOK = {"name": "מטר", "sub": "תראו אותו גדל", "label": "בר מצווה", "credit": "באהבה, אמא, אבא, מידן ואייר", "blurbLabel": "תקציר", "blurb": "מהבטן של אמא, דרך המגבת האדומה, הבריכות, הנחלים והטרמפולינות, ועד היום שבו הוא עולה לתורה. כל התמונות שצילמנו לאורך השנים חוזרות לחיים, בסרט אחד.", "again": "לצפייה שוב", "p_front": "כריכה", "p_open": "הסרט", "p_back": "תקציר", "dir": "rtl", "base": ""};</script>
+<script>window.BOOK = {"name": "מטר", "sub": "תראו אותו גדל", "label": "בר מצווה", "credit": "באהבה, אמא, אבא, מידן ואייר", "blurbLabel": "תקציר", "blurb": "מהבטן של אמא, דרך המגבת האדומה, הבריכות, הנחלים והטרמפולינות, ועד היום שבו הוא עולה לתורה. כל התמונות שצילמנו לאורך השנים חוזרות לחיים, בסרט אחד.", "again": "לצפייה שוב", "p_front": "כריכה", "p_open": "הסרט", "p_back": "תקציר", "line1": "שלוש עשרה שנים. סרט אחד.", "w1": "הוא הגיע אלינו קטן,", "w2": "גדל בבריכות, בנחלים ועל טרמפולינות,", "w3": "מוקף באנשים שאוהבים אותו,", "w4": "ועכשיו הוא בן שלוש עשרה.", "dir": "rtl", "base": ""};</script>
 <script src="lib/hls.min.js"></script>
 <script type="module" src="book.js"></script>
 </body>

@@ -12,7 +12,9 @@ LANGS = {
     book=dict(name="מטר", sub="תראו אותו גדל", label="בר מצווה", credit="באהבה, אמא, אבא, מידן ואייר",
               blurbLabel="תקציר",
               blurb="מהבטן של אמא, דרך המגבת האדומה, הבריכות, הנחלים והטרמפולינות, ועד היום שבו הוא עולה לתורה. כל התמונות שצילמנו לאורך השנים חוזרות לחיים, בסרט אחד.",
-              again="לצפייה שוב", p_front="כריכה", p_open="הסרט", p_back="תקציר"),
+              again="לצפייה שוב", p_front="כריכה", p_open="הסרט", p_back="תקציר",
+              line1="שלוש עשרה שנים. סרט אחד.", w1="הוא הגיע אלינו קטן,", w2="גדל בבריכות, בנחלים ועל טרמפולינות,",
+              w3="מוקף באנשים שאוהבים אותו,", w4="ועכשיו הוא בן שלוש עשרה."),
   ),
   "en": dict(
     lang="en", dir="ltr", base="../", out="en/index.html", other="../", other_label="עברית",
@@ -23,7 +25,9 @@ LANGS = {
     book=dict(name="Matar", sub="Watch him grow", label="Bar Mitzvah", credit="With love, Mom, Dad, Meidan & Iyar",
               blurbLabel="The story",
               blurb="From before he was born, through the red towel, the pools, the streams and the trampolines, all the way to the day he is called to the Torah. Every photo we took over the years comes back to life in one film.",
-              again="Watch again", p_front="Front cover", p_open="The film", p_back="The story"),
+              again="Watch again", p_front="Front cover", p_open="The film", p_back="The story",
+              line1="Thirteen years. One film.", w1="He came to us small,", w2="grew up in pools, streams and on trampolines,",
+              w3="surrounded by people who love him,", w4="and now he is thirteen."),
   ),
 }
 

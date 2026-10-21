@@ -42,10 +42,12 @@ function wrap(g, s, x, y, maxW, size, lh, weight = 400, color = INKL) {
 }
 
 const SHOTS = [6, 18, 58, 86, 114, 146];
+const PAPER = "#f5f3ef", INK = "#141414", GREY = "#8c8a85";
 async function faces() {
   const imgs = await Promise.all(SHOTS.map((s) => loadImg(`${BASE}f/${s}.jpg`)));
-  const M = 92;                                     // page margin
-  const sx = (w) => RTL ? w - M : M;                // start x for text
+  const IMG = Object.fromEntries(SHOTS.map((s, i) => [s, imgs[i]]));
+  const M = 92;
+  const sx = (w) => RTL ? w - M : M;
   const front = (g, w, h) => {
     cloth(g, w, h);
     txt(g, T.label, sx(w), M + 30, 30, 400, "rgba(220,216,207,.75)");
@@ -53,7 +55,6 @@ async function faces() {
     const ts = Math.min(150, 150 * (w - 2 * M) / (tw + 20));
     txt(g, T.name + ",", sx(w), M + 110 + ts, ts, 500, INKL, "start", -ts / 50);
     txt(g, T.sub + ".", sx(w), M + 110 + ts * 2, ts, 500, INKL, "start", -ts / 50);
-    // six small frames in a 3 × 2 grid
     const cols = 3, gap = 12, gw = w - 2 * M, cw = (gw - gap * (cols - 1)) / cols, ch = cw * 9 / 16, y0 = h - M - 120 - 2 * ch - gap;
     imgs.forEach((im, i) => {
       if (!im) return; const c = i % cols, r = Math.floor(i / cols);
@@ -70,8 +71,35 @@ async function faces() {
     txt(g, T.again + "  " + (RTL ? "←" : "→"), sx(w), h - M - 90, 36, 500);
     txt(g, T.credit, sx(w), h - M, 28, 400, "rgba(220,216,207,.75)");
   };
-  const inner = (g, w, h) => { g.fillStyle = "#232220"; g.fillRect(0, 0, w, h); };
-  return [[{ kind: "front", draw: front }, { kind: "inner", draw: inner }], [{ kind: "inner", draw: inner }, { kind: "back", draw: back }]];
+  const dark = (g, w, h) => { g.fillStyle = "#232220"; g.fillRect(0, 0, w, h); };
+  const paper = (g, w, h) => { g.fillStyle = PAPER; g.fillRect(0, 0, w, h); const id = g.getImageData(0, 0, w, h), d = id.data; for (let i = 0; i < d.length; i += 4) { const n = (Math.random() - .5) * 5; d[i] += n; d[i + 1] += n; d[i + 2] += n; } g.putImageData(id, 0, 0); };
+  const folio = (g, w, h, n) => txt(g, String(n).padStart(2, "0"), sx(w), M + 24, 26, 400, GREY);
+  // pages: a few words on one side, a full-bleed frame on the other
+  const title = { kind: "page", draw: (g, w, h) => {
+    paper(g, w, h); txt(g, T.label, sx(w), M + 24, 26, 400, GREY);
+    txt(g, T.name, sx(w), h * .52, 210, 500, INK, "start", -5);
+    wrap(g, T.line1, sx(w), h * .52 + 110, w - 2 * M, 44, 58, 400, INK);
+    txt(g, T.credit, sx(w), h - M, 24, 400, GREY);
+  } };
+  const words = (n, line) => ({ kind: "page", draw: (g, w, h) => {
+    paper(g, w, h); folio(g, w, h, n);
+    wrap(g, line, sx(w), h - M - 300, w - 2 * M, 84, 96, 500, INK);
+  } });
+  const photo = (shot) => ({ kind: "page", draw: (g, w, h) => {
+    const im = IMG[shot]; paper(g, w, h); if (!im) return;
+    const k = Math.max(w / im.width, h / im.height), iw = im.width * k, ih = im.height * k;
+    g.drawImage(im, (w - iw) / 2 + (T.focus?.[shot] || 0) * iw, (h - ih) / 2, iw, ih);
+  } });
+  // leaf = [front, back]; spread k shows [leaf k-1 back, leaf k front]
+  return [
+    [{ kind: "front", draw: front, hard: true }, { kind: "inner", draw: dark }],
+    [title, words(2, T.w1)],
+    [photo(18), words(3, T.w2)],
+    [photo(58), words(4, T.w3)],
+    [photo(72), words(5, T.w4)],
+    [photo(114), { kind: "inner", draw: dark }],
+    [{ kind: "inner", draw: dark, hard: true }, { kind: "back", draw: back, hard: true }],
+  ];
 }
 
 // ---------- scene ----------
@@ -95,31 +123,40 @@ const wall = new THREE.Mesh(new THREE.PlaneGeometry(20, 20), new THREE.ShadowMat
 wall.position.z = -.16; wall.receiveShadow = true; scene.add(wall);
 const book = new THREE.Group(); stage.add(book);
 
-// the two boards of a hardcover
+// leaves: two cloth boards and paper pages that bend as they turn
 const leaves = [];
+const COLS = 28, PGAP = .005;
 function makeLeaf(f, i, n) {
-  const geo = new THREE.PlaneGeometry(CW, CH, 1, 1); geo.translate(S * CW / 2, 0, 0);
-  const tex = (face, mirror) => { const [c, g] = canvasFor(mirror); face.draw(g, c.width, c.height); const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = renderer.capabilities.getMaxAnisotropy(); return t; };
-  if (S < 0) { const uv = geo.attributes.uv; for (let k = 0; k < uv.count; k++) uv.setX(k, 1 - uv.getX(k)); }   // keep u=0 at the spine
-  const mf = new THREE.MeshStandardMaterial({ map: tex(f[0], S < 0), roughness: .85, side: THREE.FrontSide });
-  const mb = new THREE.MeshStandardMaterial({ map: tex(f[1], S > 0), roughness: .85, side: THREE.BackSide });
-  const pivot = new THREE.Group(); book.add(pivot);
+  const hard = !!(f[0].hard || f[1].hard), w = hard ? CW : W, h = hard ? CH : H;
+  const geo = new THREE.BufferGeometry();
+  const pos = new Float32Array((COLS + 1) * 6), uv = new Float32Array((COLS + 1) * 4), idx = [];
+  for (let c = 0; c <= COLS; c++) for (let r = 0; r < 2; r++) { const k = c * 2 + r; uv[k * 2] = c / COLS; uv[k * 2 + 1] = r; }
+  for (let c = 0; c < COLS; c++) { const a = c * 2, b = a + 1, d = a + 2, e = a + 3; if (S > 0) idx.push(a, d, b, b, d, e); else idx.push(a, b, d, b, e, d); }
+  geo.setIndex(idx); geo.setAttribute("position", new THREE.BufferAttribute(pos, 3)); geo.setAttribute("uv", new THREE.BufferAttribute(uv, 2));
+  const tex = (face, mirror) => { const c = document.createElement("canvas"); c.width = TEX_W; c.height = Math.round(TEX_W * h / w); const g = c.getContext("2d"); if (mirror) { g.translate(c.width, 0); g.scale(-1, 1); } face.draw(g, c.width, c.height); const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = renderer.capabilities.getMaxAnisotropy(); return t; };
+  const mf = new THREE.MeshStandardMaterial({ map: tex(f[0], S < 0), roughness: hard ? .85 : .95, side: THREE.FrontSide });
+  const mb = new THREE.MeshStandardMaterial({ map: tex(f[1], S > 0), roughness: hard ? .85 : .95, side: THREE.BackSide });
   const a = new THREE.Mesh(geo, mf), b = new THREE.Mesh(geo, mb);
-  a.castShadow = b.castShadow = true;
-  a.userData.kind = f[0].kind; b.userData.kind = f[1].kind;
-  pivot.add(a, b);
-  const L = { i, n, pivot, p: 0, meshes: [a, b] }; place(L, 0); return L;
+  a.castShadow = b.castShadow = true; a.receiveShadow = b.receiveShadow = true;
+  a.userData = { kind: f[0].kind, leaf: i, side: 0 }; b.userData = { kind: f[1].kind, leaf: i, side: 1 };
+  book.add(a, b);
+  const L = { i, n, w, h, hard, geo, p: 0, meshes: [a, b] }; place(L, 0); return L;
 }
+const zOf = (L, p) => (1 - p) * (L.n - L.i) * PGAP + p * (L.i + 1) * PGAP;
 function place(L, p) {
-  L.pivot.rotation.y = -S * Math.PI * p;                                   // hinge at the spine
-  L.pivot.position.z = (1 - p) * (L.n - L.i) * GAP + p * (L.i + 1) * GAP + Math.sin(Math.PI * p) * .02;
+  const pos = L.geo.attributes.position.array, theta = Math.PI * p;
+  const bend = L.hard ? 0 : -1.1 * Math.sin(Math.PI * p), lift = Math.sin(Math.PI * p) * (L.hard ? .02 : .045);
+  const z0 = zOf(L, p); let x = 0, z = 0; const ds = L.w / COLS;
+  for (let c = 0; c <= COLS; c++) {
+    if (c) { const a = theta + bend * ((c - .5) / COLS); x += Math.cos(a) * ds; z += Math.sin(a) * ds; }
+    for (let r = 0; r < 2; r++) { const k = (c * 2 + r) * 3; pos[k] = S * x; pos[k + 1] = (r - .5) * L.h; pos[k + 2] = z + z0 + lift * (c / COLS); }
+  }
+  L.geo.attributes.position.needsUpdate = true; L.geo.computeVertexNormals(); L.geo.computeBoundingSphere();
 }
 
-// spine + page block, while the book rests closed
-const spine = new THREE.Mesh(new THREE.BoxGeometry(.012, CH, GAP + .004), new THREE.MeshStandardMaterial({ color: 0x252422, roughness: .9 }));
-spine.position.set(-S * .006, 0, 1.5 * GAP); spine.castShadow = true; book.add(spine);
-const pages = new THREE.Mesh(new THREE.BoxGeometry(W - .01, H - .02, GAP * .86), new THREE.MeshStandardMaterial({ color: 0xf2efe8, roughness: 1 }));
-pages.position.z = 1.5 * GAP; pages.castShadow = true; book.add(pages);
+// the spine, seen while the book is closed
+const spine = new THREE.Mesh(new THREE.BoxGeometry(.012, CH, 1), new THREE.MeshStandardMaterial({ color: 0x252422, roughness: .9 }));
+spine.castShadow = true; book.add(spine);
 
 // ---------- the film, printed across the open spread ----------
 const video = $("film");
@@ -133,25 +170,26 @@ const crop = (t) => { const k = (2 * W / H) / (16 / 9); t.repeat.set(k, 1); t.of
 crop(vtex); crop(ptex);
 const filmMat = new THREE.MeshBasicMaterial({ map: ptex, transparent: true, opacity: 0, toneMapped: false });
 const film = new THREE.Mesh(new THREE.PlaneGeometry(2 * W, H), filmMat);
-film.position.z = GAP + .002; film.userData.kind = "film"; book.add(film);
+ film.userData.kind = "film"; book.add(film);
 video.addEventListener("playing", () => { filmMat.map = vtex; filmMat.needsUpdate = true; }, { once: true });
 // the soft fold in the middle of the spread
 const gc = document.createElement("canvas"); gc.width = 512; gc.height = 4; { const g = gc.getContext("2d"); const gr = g.createLinearGradient(0, 0, 512, 0);
   gr.addColorStop(0, "rgba(0,0,0,0)"); gr.addColorStop(.44, "rgba(0,0,0,.05)"); gr.addColorStop(.5, "rgba(0,0,0,.32)"); gr.addColorStop(.56, "rgba(0,0,0,.05)"); gr.addColorStop(1, "rgba(0,0,0,0)"); g.fillStyle = gr; g.fillRect(0, 0, 512, 4); }
 const gutterMat = new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(gc), transparent: true, opacity: 0, depthWrite: false });
-const gutter = new THREE.Mesh(new THREE.PlaneGeometry(.5, H), gutterMat); gutter.position.z = GAP + .003; book.add(gutter);
+const gutter = new THREE.Mesh(new THREE.PlaneGeometry(.5, H), gutterMat);  book.add(gutter);
 
 // ---------- state ----------
-let state = 0;                                   // 0 front · 1 open (film) · 2 back (story)
+// 0 = front cover · 1..FILM-1 = pages · FILM = the film across the spread · END = back cover (the story)
+let state = 0, FILM = 6, END = 7;
 const body = document.body, hint = $("hint");
-const NAMES = ["front", "open", "back"], LABELS = [T.p_front, T.p_open, T.p_back];
+const name = (s) => s === 0 ? "front" : s === END ? "back" : s === FILM ? "open" : "pages";
 function go(s, opts = {}) {
-  state = clamp(s, 0, 2);
-  body.dataset.state = NAMES[state];
-  hint.textContent = hint.dataset[NAMES[state]];
-  $("left").disabled = RTL ? state === 2 : state === 0;
-  $("right").disabled = RTL ? state === 0 : state === 2;
-  if (state === 1) { if (opts.restart || video.ended) video.currentTime = 0; video.play().catch(() => {}); }
+  state = clamp(s, 0, END);
+  body.dataset.state = name(state);
+  hint.textContent = hint.dataset[name(state)] || hint.dataset.open;
+  $("left").disabled = RTL ? state === END : state === 0;
+  $("right").disabled = RTL ? state === 0 : state === END;
+  if (state === FILM) { if (opts.restart || video.ended) video.currentTime = 0; video.play().catch(() => {}); }
   else video.pause();
 }
 window.bookGo = go;
@@ -160,25 +198,25 @@ $("left").onclick = () => (RTL ? next() : prev());
 $("right").onclick = () => (RTL ? prev() : next());
 $("openBook").onclick = () => go(1);
 $("closeBook").onclick = () => go(0);
-$("watch").onclick = () => go(1, { restart: state !== 1 });
-$("full").onclick = () => { if (state !== 1) go(1); if (video.requestFullscreen) video.requestFullscreen(); else if (video.webkitEnterFullscreen) video.webkitEnterFullscreen(); };
+$("watch").onclick = () => go(FILM, { restart: state !== FILM });
+$("full").onclick = () => { if (state !== FILM) go(FILM); if (video.requestFullscreen) video.requestFullscreen(); else if (video.webkitEnterFullscreen) video.webkitEnterFullscreen(); };
 const wave = $("wave");
 $("mute").onclick = () => { video.muted = !video.muted; wave.style.opacity = video.muted ? 0 : 1; };
-video.addEventListener("ended", () => setTimeout(() => go(2), 700));
+video.addEventListener("ended", () => setTimeout(() => go(END), 700));
 
 // status bar line: film time when open, place in the book otherwise
 const fmt = (s) => { s = Math.max(0, Math.floor(s || 0)); return Math.floor(s / 60) + ":" + String(s % 60).padStart(2, "0"); };
 const pa = $("pa"), pb = $("pb"), fill = $("fill"), track = $("track");
 function bar() {
-  if (state === 1) {
+  if (state === FILM) {
     const d = video.duration || 158.6;
     pa.textContent = fmt(video.currentTime); pb.textContent = fmt(d);
     fill.style.width = clamp(video.currentTime / d) * 100 + "%"; fill.classList.add("thick");
-  } else { pa.textContent = LABELS[state]; pb.textContent = "3"; fill.style.width = (state === 2 ? 100 : 12) + "%"; fill.classList.remove("thick"); }
+  } else { pa.textContent = state === 0 ? T.p_front : state === END ? T.p_back : String(state * 2 - 1).padStart(2, "0") + "–" + String(state * 2).padStart(2, "0"); pb.textContent = String(END * 2 - 2); fill.style.width = state / END * 100 + "%"; fill.classList.remove("thick"); }
 }
 let scrub = false;
-const seekAt = (e) => { const r = track.getBoundingClientRect(); const p = clamp((e.clientX - r.left) / r.width); if (state === 1 && video.duration) video.currentTime = p * video.duration; };
-track.addEventListener("pointerdown", (e) => { if (state !== 1) return; scrub = true; track.setPointerCapture(e.pointerId); seekAt(e); });
+const seekAt = (e) => { const r = track.getBoundingClientRect(); const p = clamp((e.clientX - r.left) / r.width); if (state === FILM && video.duration) video.currentTime = p * video.duration; };
+track.addEventListener("pointerdown", (e) => { if (state !== FILM) return; scrub = true; track.setPointerCapture(e.pointerId); seekAt(e); });
 track.addEventListener("pointermove", (e) => { if (scrub) seekAt(e); });
 track.addEventListener("pointerup", () => { scrub = false; });
 
@@ -201,16 +239,18 @@ renderer.domElement.addEventListener("pointerup", (e) => {
   if (!down) return; const dx = e.clientX - down.x; down = null;
   if (Math.abs(dx) > 40) return (dx < 0) === RTL ? prev() : next();   // drag the paper
   const hit = pick(e); if (!hit) return;
-  const k = hit.object.userData.kind;
-  if (k === "front") go(1);
-  else if (k === "back") go(1, { restart: true });
-  else if (k === "film") video.paused ? video.play() : video.pause();
+  const { kind, leaf, side } = hit.object.userData;
+  if (kind === "film") return video.paused ? video.play() : video.pause();
+  if (kind === "back") return go(FILM, { restart: true });
+  if (side === 0 && leaf === state) next();            // the page waiting to be turned
+  else if (side === 1 && leaf === state - 1) prev();    // the page just turned
+  else if (kind === "front") next();
 });
 addEventListener("keydown", (e) => {
-  if (e.key === " ") { e.preventDefault(); state === 1 ? (video.paused ? video.play() : video.pause()) : go(1); }
+  if (e.key === " ") { e.preventDefault(); state === FILM ? (video.paused ? video.play() : video.pause()) : next(); }
   else if (e.key === "ArrowLeft") RTL ? next() : prev();
   else if (e.key === "ArrowRight") RTL ? prev() : next();
-  else if (e.key === "Escape" && state === 1) go(0);
+  else if (e.key === "Escape") go(0);
 });
 
 // ---------- frame ----------
@@ -218,7 +258,7 @@ function fit() {
   const w = host.clientWidth, h = host.clientHeight, pr = renderer.getPixelRatio();
   if (renderer.domElement.width !== Math.floor(w * pr) || renderer.domElement.height !== Math.floor(h * pr)) renderer.setSize(w, h);
   camera.aspect = w / h; camera.updateProjectionMatrix();
-  const open = state === 1, f = Math.tan(camera.fov * Math.PI / 360);
+  const open = state > 0 && state < END, f = Math.tan(camera.fov * Math.PI / 360);
   const needW = open ? 2 * CW * 1.16 : CW * 1.75, needH = CH * (open ? 1.18 : 1.3);
   return Math.max(needH / 2 / f, needW / 2 / (f * camera.aspect));
 }
@@ -226,21 +266,27 @@ const clock = new THREE.Clock(), goal = new THREE.Vector3();
 let offset = -S * CW / 2, yaw = -S * .42;
 function frame() {
   const dt = Math.min(.05, clock.getDelta());
+  // turn leaves one after another
   for (const L of leaves) {
-    const g = L.i < state ? 1 : 0;
-    if (L.p !== g) { L.p = g ? Math.min(1, L.p + dt / 1.15) : Math.max(0, L.p - dt / 1.15); place(L, ease(L.p)); }
+    const g = L.i < state ? 1 : 0; if (L.p === g) continue;
+    const ready = g ? leaves.every((o) => o.i >= L.i || o.i >= state || o.p > .25) : leaves.every((o) => o.i <= L.i || o.i < state || o.p < .75);
+    if (!ready) continue;
+    const sp = L.hard ? 1 / 1.15 : 1 / .9;
+    L.p = g ? Math.min(1, L.p + dt * sp) : Math.max(0, L.p - dt * sp); place(L, ease(L.p));
   }
   const resting = leaves.every((L) => L.p === 0 || L.p === 1);
-  const open = state === 1 && resting;
-  pages.visible = spine.visible = !open;
-  pages.position.x = (leaves[0].p > .5 && leaves[1].p > .5 ? -S : S) * W / 2;
-  filmMat.opacity += ((open ? 1 : 0) - filmMat.opacity) * Math.min(1, dt * (open ? 4 : 10));
+  const closed = (state === 0 || state === END);
+  spine.visible = closed || !resting;
+  spine.scale.z = (leaves.length - 1) * PGAP + .004; spine.position.set(-S * .006, 0, (leaves.length + 1) / 2 * PGAP);
+  const filmOn = state === FILM && resting;
+  film.position.z = gutter.position.z = leaves.length * PGAP + .004;
+  filmMat.opacity += ((filmOn ? 1 : 0) - filmMat.opacity) * Math.min(1, dt * (filmOn ? 4 : 10));
   gutterMat.opacity = filmMat.opacity; film.visible = gutter.visible = filmMat.opacity > .01;
 
-  const wantOff = state === 0 ? -S * CW / 2 : state === 2 ? S * CW / 2 : 0;
+  const wantOff = state === 0 ? -S * CW / 2 : state === END ? S * CW / 2 : 0;
   offset += (wantOff - offset) * Math.min(1, dt * 3.2); book.position.x = offset;
-  const wantYaw = state === 0 ? -S * .42 : state === 2 ? S * .42 : 0;
-  const calm = state === 1 ? .3 : 1;
+  const wantYaw = state === 0 ? -S * .42 : state === END ? S * .42 : 0;
+  const calm = state === FILM ? .3 : 1;
   yaw += (wantYaw - yaw) * Math.min(1, dt * 3); stage.rotation.y = yaw + look.x * .05 * calm;
   stage.rotation.x = look.y * .03 * calm;
   goal.set(0, 0, fit()); camera.position.lerp(goal, Math.min(1, dt * 3)); camera.lookAt(0, 0, 0);
@@ -251,7 +297,7 @@ function frame() {
 
 (async () => {
   await Promise.race([new Promise((r) => setTimeout(r, 2500)), Promise.all([document.fonts.load(`500 100px "${FONT}"`, "מטר Matar"), document.fonts.load(`400 30px "${FONT}"`, "מטר Matar")]).catch(() => {})]);
-  (await faces()).forEach((f, i, all) => leaves.push(makeLeaf(f, i, all.length)));
+  const F = await faces(); F.forEach((f, i) => leaves.push(makeLeaf(f, i, F.length))); END = F.length; FILM = END - 1;
   go(0); camera.position.set(0, 0, fit() * 1.3);
   body.classList.add("ready");
   frame();
