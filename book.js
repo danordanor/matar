@@ -41,7 +41,7 @@ function wrap(g, s, x, y, maxW, size, lh, weight = 400, color = INKL) {
   return lines.length;
 }
 
-const SHOTS = [6, 18, 58, 86, 114, 146];
+const SHOTS = [6, 18, 44, 58, 72, 86, 100, 114, 128, 146];
 const PAPER = "#f5f3ef", INK = "#141414", GREY = "#8c8a85";
 async function faces() {
   const imgs = await Promise.all(SHOTS.map((s) => loadImg(`${BASE}f/${s}.jpg`)));
@@ -74,30 +74,38 @@ async function faces() {
   const dark = (g, w, h) => { g.fillStyle = "#232220"; g.fillRect(0, 0, w, h); };
   const paper = (g, w, h) => { g.fillStyle = PAPER; g.fillRect(0, 0, w, h); const id = g.getImageData(0, 0, w, h), d = id.data; for (let i = 0; i < d.length; i += 4) { const n = (Math.random() - .5) * 5; d[i] += n; d[i + 1] += n; d[i + 2] += n; } g.putImageData(id, 0, 0); };
   const folio = (g, w, h, n) => txt(g, String(n).padStart(2, "0"), sx(w), M + 24, 26, 400, GREY);
-  // pages: a few words on one side, a full-bleed frame on the other
-  const title = { kind: "page", draw: (g, w, h) => {
-    paper(g, w, h); txt(g, T.label, sx(w), M + 24, 26, 400, GREY);
-    txt(g, T.name, sx(w), h * .52, 210, 500, INK, "start", -5);
-    wrap(g, T.line1, sx(w), h * .52 + 110, w - 2 * M, 44, 58, 400, INK);
-    txt(g, T.credit, sx(w), h - M, 24, 400, GREY);
+  // page 1: a few words on one side, moving photos on the other
+  const page1 = { kind: "page", draw: (g, w, h) => {
+    // printed on the inside of the board: keep a cloth rim where the board is larger than the paper
+    paper(g, w, h); const rx = Math.round(w * (CW - W) / CW), ry = Math.round(h * (CH - H) / CH / 2);
+    g.fillStyle = "#232220"; g.fillRect(RTL ? w - rx : 0, 0, rx, h); g.fillRect(0, 0, w, ry); g.fillRect(0, h - ry, w, ry);
+    txt(g, T.label, sx(w), M + 24, 26, 400, GREY);
+    txt(g, T.name, sx(w), h * .40, 220, 600, INK, "start", -4);
+    txt(g, T.line1, sx(w), h * .40 + 90, 40, 500, INK);
+    wrap(g, T.story, sx(w), h - M - 330, w - 2 * M, 46, 66, 400, "#3a3936");
+    txt(g, T.next + "  " + (RTL ? "←" : "→"), sx(w), h - M, 30, 500, INK);
   } };
-  const words = (n, line) => ({ kind: "page", draw: (g, w, h) => {
-    paper(g, w, h); folio(g, w, h, n);
-    wrap(g, line, sx(w), h - M - 300, w - 2 * M, 84, 96, 500, INK);
-  } });
-  const photo = (shot) => ({ kind: "page", draw: (g, w, h) => {
-    const im = IMG[shot]; paper(g, w, h); if (!im) return;
-    const k = Math.max(w / im.width, h / im.height), iw = im.width * k, ih = im.height * k;
-    g.drawImage(im, (w - iw) / 2 + (T.focus?.[shot] || 0) * iw, (h - ih) / 2, iw, ih);
-  } });
+  // slow cross-fading photos with a gentle push-in (redrawn every frame while visible)
+  const HOLD = 2.6, FADE = 1.1, CYCLE = HOLD + FADE;
+  const moving = { kind: "page", live: true, draw: (g, w, h, t = 0) => {
+    const n = imgs.length, k = t / CYCLE, i = Math.floor(k) % n, f = k - Math.floor(k);
+    const shot = (im, local, alpha) => {
+      if (!im) return; const z = 1.06 + .08 * local, kk = Math.max(w / im.width, h / im.height) * z, iw = im.width * kk, ih = im.height * kk;
+      const drift = (local - .5) * 40 * ((i % 2) ? 1 : -1);
+      g.globalAlpha = alpha; g.drawImage(im, (w - iw) / 2 + drift, (h - ih) / 2, iw, ih); g.globalAlpha = 1;
+    };
+    g.fillStyle = "#111"; g.fillRect(0, 0, w, h);
+    const fadeStart = HOLD / CYCLE;
+    shot(imgs[i], f, 1);
+    if (f > fadeStart) shot(imgs[(i + 1) % n], (f - fadeStart) * .3, (f - fadeStart) / (1 - fadeStart));
+    // small counter, like a contact sheet
+    g.fillStyle = "rgba(255,255,255,.85)"; g.font = `500 24px "${FONT}"`; g.direction = "ltr"; g.textAlign = "left";
+    g.fillText(String(i + 1).padStart(2, "0") + " / " + String(n).padStart(2, "0"), RTL ? M : w - M - 120, h - M + 4);
+  } };
   // leaf = [front, back]; spread k shows [leaf k-1 back, leaf k front]
   return [
-    [{ kind: "front", draw: front, hard: true }, { kind: "inner", draw: dark }],
-    [title, words(2, T.w1)],
-    [photo(18), words(3, T.w2)],
-    [photo(58), words(4, T.w3)],
-    [photo(72), words(5, T.w4)],
-    [photo(114), { kind: "inner", draw: dark }],
+    [{ kind: "front", draw: front, hard: true }, page1],
+    [moving, { kind: "inner", draw: dark }],
     [{ kind: "inner", draw: dark, hard: true }, { kind: "back", draw: back, hard: true }],
   ];
 }
@@ -124,7 +132,7 @@ wall.position.z = -.16; wall.receiveShadow = true; scene.add(wall);
 const book = new THREE.Group(); stage.add(book);
 
 // leaves: two cloth boards and paper pages that bend as they turn
-const leaves = [];
+const leaves = [], live = [];
 const COLS = 28, PGAP = .005;
 function makeLeaf(f, i, n) {
   const hard = !!(f[0].hard || f[1].hard), w = hard ? CW : W, h = hard ? CH : H;
@@ -133,7 +141,13 @@ function makeLeaf(f, i, n) {
   for (let c = 0; c <= COLS; c++) for (let r = 0; r < 2; r++) { const k = c * 2 + r; uv[k * 2] = c / COLS; uv[k * 2 + 1] = r; }
   for (let c = 0; c < COLS; c++) { const a = c * 2, b = a + 1, d = a + 2, e = a + 3; if (S > 0) idx.push(a, d, b, b, d, e); else idx.push(a, b, d, b, e, d); }
   geo.setIndex(idx); geo.setAttribute("position", new THREE.BufferAttribute(pos, 3)); geo.setAttribute("uv", new THREE.BufferAttribute(uv, 2));
-  const tex = (face, mirror) => { const c = document.createElement("canvas"); c.width = TEX_W; c.height = Math.round(TEX_W * h / w); const g = c.getContext("2d"); if (mirror) { g.translate(c.width, 0); g.scale(-1, 1); } face.draw(g, c.width, c.height); const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = renderer.capabilities.getMaxAnisotropy(); return t; };
+  const tex = (face, mirror) => {
+    const c = document.createElement("canvas"); c.width = face.live ? 768 : TEX_W; c.height = Math.round(c.width * h / w); const g = c.getContext("2d"); if (mirror) { g.translate(c.width, 0); g.scale(-1, 1); }
+    face.draw(g, c.width, c.height, 0);
+    const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = renderer.capabilities.getMaxAnisotropy();
+    if (face.live) live.push({ face, g, c, t, leaf: i });
+    return t;
+  };
   const mf = new THREE.MeshStandardMaterial({ map: tex(f[0], S < 0), roughness: hard ? .85 : .95, side: THREE.FrontSide });
   const mb = new THREE.MeshStandardMaterial({ map: tex(f[1], S > 0), roughness: hard ? .85 : .95, side: THREE.BackSide });
   const a = new THREE.Mesh(geo, mf), b = new THREE.Mesh(geo, mb);
@@ -212,7 +226,7 @@ function bar() {
     const d = video.duration || 158.6;
     pa.textContent = fmt(video.currentTime); pb.textContent = fmt(d);
     fill.style.width = clamp(video.currentTime / d) * 100 + "%"; fill.classList.add("thick");
-  } else { pa.textContent = state === 0 ? T.p_front : state === END ? T.p_back : String(state * 2 - 1).padStart(2, "0") + "–" + String(state * 2).padStart(2, "0"); pb.textContent = String(END * 2 - 2); fill.style.width = state / END * 100 + "%"; fill.classList.remove("thick"); }
+  } else { pa.textContent = state === 0 ? T.p_front : state === END ? T.p_back : T.p_page; pb.textContent = ""; fill.style.width = state / END * 100 + "%"; fill.classList.remove("thick"); }
 }
 let scrub = false;
 const seekAt = (e) => { const r = track.getBoundingClientRect(); const p = clamp((e.clientX - r.left) / r.width); if (state === FILM && video.duration) video.currentTime = p * video.duration; };
@@ -290,6 +304,7 @@ function frame() {
   yaw += (wantYaw - yaw) * Math.min(1, dt * 3); stage.rotation.y = yaw + look.x * .05 * calm;
   stage.rotation.x = look.y * .03 * calm;
   goal.set(0, 0, fit()); camera.position.lerp(goal, Math.min(1, dt * 3)); camera.lookAt(0, 0, 0);
+  for (const L of live) { if (state <= 1 || leaves[L.leaf].p < 1) { L.face.draw(L.g, L.c.width, L.c.height, clock.elapsedTime); L.t.needsUpdate = true; } }
   if (!scrub) bar();
   renderer.render(scene, camera);
   requestAnimationFrame(frame);

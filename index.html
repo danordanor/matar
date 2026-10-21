@@ -10,15 +10,16 @@
 <meta property="og:image" content="poster.jpg">
 <meta name="theme-color" content="#ffffff">
 <style>
-  @font-face { font-family: "Swiss"; font-weight: 400; src: url(fonts/heebo-hebrew-400-normal.woff2) format("woff2"); unicode-range: U+0590-05FF, U+200C-2010, U+20AA, U+25CC, U+FB1D-FB4F; font-display: swap; }
-  @font-face { font-family: "Swiss"; font-weight: 500; src: url(fonts/heebo-hebrew-500-normal.woff2) format("woff2"); unicode-range: U+0590-05FF, U+200C-2010, U+20AA, U+25CC, U+FB1D-FB4F; font-display: swap; }
-  @font-face { font-family: "Swiss"; font-weight: 400; src: url(fonts/inter-latin-400-normal.woff2) format("woff2"); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+2000-206F, U+2190-2199, U+25A0, U+FEFF; font-display: swap; }
-  @font-face { font-family: "Swiss"; font-weight: 500; src: url(fonts/inter-latin-500-normal.woff2) format("woff2"); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+2000-206F, U+2190-2199, U+25A0, U+FEFF; font-display: swap; }
+  @font-face { font-family: "Swiss"; font-weight: 400; src: url(fonts/plex-hebrew-400.woff2) format("woff2"); unicode-range: U+0590-05FF, U+200C-2010, U+20AA, U+25CC, U+FB1D-FB4F; font-display: swap; }
+  @font-face { font-family: "Swiss"; font-weight: 400; src: url(fonts/plex-latin-400.woff2) format("woff2"); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+2000-206F, U+2190-2199, U+25A0, U+FEFF; font-display: swap; }
+  @font-face { font-family: "Swiss"; font-weight: 500; src: url(fonts/plex-hebrew-500.woff2) format("woff2"); unicode-range: U+0590-05FF, U+200C-2010, U+20AA, U+25CC, U+FB1D-FB4F; font-display: swap; }
+  @font-face { font-family: "Swiss"; font-weight: 500; src: url(fonts/plex-latin-500.woff2) format("woff2"); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+2000-206F, U+2190-2199, U+25A0, U+FEFF; font-display: swap; }
+  @font-face { font-family: "Swiss"; font-weight: 600; src: url(fonts/plex-hebrew-600.woff2) format("woff2"); unicode-range: U+0590-05FF, U+200C-2010, U+20AA, U+25CC, U+FB1D-FB4F; font-display: swap; }
+  @font-face { font-family: "Swiss"; font-weight: 600; src: url(fonts/plex-latin-600.woff2) format("woff2"); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+2000-206F, U+2190-2199, U+25A0, U+FEFF; font-display: swap; }
 
   :root { --ink: #111; --soft: #8c8c8c; --line: #e3e3e3; --ease: cubic-bezier(.22, 1, .36, 1); --bar: 72px; }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   html, body { height: 100%; overflow: hidden; background: #fff; }
-  body { color: var(--ink); font-family: "Swiss", system-ui, sans-serif; -webkit-font-smoothing: antialiased; -webkit-tap-highlight-color: transparent; }
   button, a { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; text-decoration: none; }
 
   /* top bar */
@@ -76,10 +77,9 @@
     <span>מטר</span>
   </div>
   <nav class="tools">
-    <a class="b wide" href="en/">English</a>
     <button class="b icon" id="mute" aria-label="sound"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M2 6h3l4-3v10l-4-3H2z"/><path id="wave" d="M11.5 5.5a3.5 3.5 0 0 1 0 5"/></svg></button>
     <button class="b icon" id="full" aria-label="מסך מלא"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M2 6V2h4M10 2h4v4M14 10v4h-4M6 14H2v-4"/></svg></button>
-    <button class="b dark" id="watch"><svg viewBox="0 0 16 16" fill="currentColor"><path d="M4 2.5v11L13 8z"/></svg>לצפייה בסרט</button>
+    <button class="b dark" id="watch"><svg viewBox="0 0 16 16" fill="currentColor"><path d="M4 2.5v11L13 8z"/></svg>לצפייה בסרטון</button>
   </nav>
 </header>
 
@@ -105,7 +105,7 @@
 
 <video id="film" playsinline preload="auto" poster="poster.jpg"></video>
 
-<script>window.BOOK = {"name": "מטר", "sub": "תראו אותו גדל", "label": "בר מצווה", "credit": "באהבה, אמא, אבא, מידן ואייר", "blurbLabel": "תקציר", "blurb": "מהבטן של אמא, דרך המגבת האדומה, הבריכות, הנחלים והטרמפולינות, ועד היום שבו הוא עולה לתורה. כל התמונות שצילמנו לאורך השנים חוזרות לחיים, בסרט אחד.", "again": "לצפייה שוב", "p_front": "כריכה", "p_open": "הסרט", "p_back": "תקציר", "line1": "שלוש עשרה שנים. סרט אחד.", "w1": "הוא הגיע אלינו קטן,", "w2": "גדל בבריכות, בנחלים ועל טרמפולינות,", "w3": "מוקף באנשים שאוהבים אותו,", "w4": "ועכשיו הוא בן שלוש עשרה.", "dir": "rtl", "base": ""};</script>
+<script>window.BOOK = {"name": "מטר", "sub": "תראו אותו גדל", "label": "בר מצווה", "credit": "באהבה, אמא, אבא, מידן ואייר", "line1": "שלוש עשרה שנים. סרטון אחד.", "story": "הוא הגיע אלינו קטן, גדל בבריכות, בנחלים ועל טרמפולינות, מוקף באנשים שאוהבים אותו. ועכשיו הוא בן שלוש עשרה.", "next": "לסרטון", "blurbLabel": "תקציר", "blurb": "מהבטן של אמא, דרך המגבת האדומה, הבריכות, הנחלים והטרמפולינות, ועד היום שבו הוא עולה לתורה. כל התמונות שצילמנו לאורך השנים חוזרות לחיים, בסרטון אחד.", "again": "לצפייה שוב", "p_front": "כריכה", "p_page": "עמוד 1", "p_back": "תקציר", "dir": "rtl", "base": ""};</script>
 <script src="lib/hls.min.js"></script>
 <script type="module" src="book.js"></script>
 </body>
