@@ -5,3 +5,5 @@ enc.done
 node_modules
 
 *.log
+
+.cache
