@@ -7,7 +7,7 @@ const BASE = T.base;
 const $ = (id) => document.getElementById(id);
 
 // ---------- look ----------
-const CLOTH = "#2c2b28", INKL = "#dcd8cf", FONT = "Swiss";
+const CLOTH = "#FFCF1A", INKL = "#16140f", SUBL = "rgba(22,20,15,.62)", FONT = "Swiss";
 const W = 1, H = 1.38, CW = 1.035, CH = 1.42, GAP = .022;
 const TEX_W = 1024, TEX_H = Math.round(TEX_W * CH / CW);
 const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
@@ -51,7 +51,7 @@ async function faces() {
   const sx = (w) => RTL ? w - M : M;
   const front = (g, w, h) => {
     cloth(g, w, h);
-    txt(g, T.label, sx(w), M + 30, 30, 400, "rgba(220,216,207,.75)");
+    txt(g, T.label, sx(w), M + 30, 30, 400, SUBL);
     g.font = `500 150px "${FONT}"`; const tw = Math.max(g.measureText(T.name + ",").width, g.measureText(T.sub + ".").width);
     const ts = Math.min(150, 150 * (w - 2 * M) / (tw + 20));
     txt(g, T.name + ",", sx(w), M + 110 + ts, ts, 500, INKL, "start", -ts / 50);
@@ -63,14 +63,14 @@ async function faces() {
       const k = Math.max(cw / im.width, ch / im.height);
       g.save(); g.beginPath(); g.rect(x, y, cw, ch); g.clip(); g.drawImage(im, x + (cw - im.width * k) / 2, y + (ch - im.height * k) / 2, im.width * k, im.height * k); g.restore();
     });
-    txt(g, T.credit, sx(w), h - M, 28, 400, "rgba(220,216,207,.75)");
+    txt(g, T.credit, sx(w), h - M, 28, 400, SUBL);
   };
   const back = (g, w, h) => {
     cloth(g, w, h);
-    txt(g, T.blurbLabel, sx(w), M + 30, 30, 400, "rgba(220,216,207,.75)");
+    txt(g, T.blurbLabel, sx(w), M + 30, 30, 400, SUBL);
     wrap(g, T.blurb, sx(w), M + 190, w - 2 * M, 54, 76, 400);
     txt(g, T.again + "  " + (RTL ? "←" : "→"), sx(w), h - M - 90, 36, 500);
-    txt(g, T.credit, sx(w), h - M, 28, 400, "rgba(220,216,207,.75)");
+    txt(g, T.credit, sx(w), h - M, 28, 400, SUBL);
   };
   const dark = (g, w, h) => { g.fillStyle = "#232220"; g.fillRect(0, 0, w, h); };
   const paperCache = {};
@@ -151,7 +151,7 @@ renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadow
 host.appendChild(renderer.domElement);
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(28, 1, .1, 50);
-scene.add(new THREE.HemisphereLight(0xffffff, 0xe8e8e8, 1.9));
+scene.add(new THREE.HemisphereLight(0xffffff, 0xeeeeee, 2.3));
 const sun = new THREE.DirectionalLight(0xffffff, 1.4);
 sun.position.set(-1.6, 2.2, 3.2); sun.castShadow = true;
 sun.shadow.mapSize.set(2048, 2048); sun.shadow.bias = -.0005;
@@ -201,7 +201,7 @@ function place(L, p) {
 }
 
 // the spine, seen while the book is closed
-const spine = new THREE.Mesh(new THREE.BoxGeometry(.012, CH, 1), new THREE.MeshStandardMaterial({ color: 0x252422, roughness: .9 }));
+const spine = new THREE.Mesh(new THREE.BoxGeometry(.012, CH, 1), new THREE.MeshStandardMaterial({ color: 0xE9B800, roughness: .8 }));
 spine.castShadow = true; book.add(spine);
 
 // ---------- the film, printed across the open spread ----------
@@ -250,7 +250,7 @@ $("right").onclick = () => (RTL ? prev() : next());
 $("openBook").onclick = () => go(1);
 $("closeBook").onclick = () => go(0);
 $("watch").onclick = () => go(FILM, { restart: state !== FILM });
-$("full").onclick = () => { if (state !== FILM) go(FILM); if (video.requestFullscreen) video.requestFullscreen(); else if (video.webkitEnterFullscreen) video.webkitEnterFullscreen(); };
+$("full").onclick = () => { const el = document.documentElement; if (document.fullscreenElement || document.webkitFullscreenElement) { (document.exitFullscreen || document.webkitExitFullscreen).call(document); } else if (el.requestFullscreen) el.requestFullscreen(); else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen(); };
 const wave = $("wave");
 $("mute").onclick = () => { video.muted = !video.muted; wave.style.opacity = video.muted ? 0 : 1; };
 video.addEventListener("ended", () => setTimeout(() => go(END), 700));
