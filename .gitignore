@@ -3,3 +3,5 @@ enc.done
 .DS_Store
 
 node_modules
+
+*.log
