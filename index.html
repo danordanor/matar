@@ -10,6 +10,8 @@
 <meta property="og:image" content="poster.jpg">
 <meta name="theme-color" content="#ffffff">
 <style>
+  @font-face { font-family: "Hand"; font-weight: 400; src: url(fonts/hand-hebrew-400.woff2) format("woff2"); unicode-range: U+0590-05FF, U+200C-2010, U+20AA, U+25CC, U+FB1D-FB4F; font-display: swap; }
+  @font-face { font-family: "Hand"; font-weight: 400; src: url(fonts/hand-latin-400.woff2) format("woff2"); unicode-range: U+0000-00FF, U+2000-206F; font-display: swap; }
   @font-face { font-family: "Swiss"; font-weight: 400; src: url(fonts/plex-hebrew-400.woff2) format("woff2"); unicode-range: U+0590-05FF, U+200C-2010, U+20AA, U+25CC, U+FB1D-FB4F; font-display: swap; }
   @font-face { font-family: "Swiss"; font-weight: 400; src: url(fonts/plex-latin-400.woff2) format("woff2"); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+2000-206F, U+2190-2199, U+25A0, U+FEFF; font-display: swap; }
   @font-face { font-family: "Swiss"; font-weight: 500; src: url(fonts/plex-hebrew-500.woff2) format("woff2"); unicode-range: U+0590-05FF, U+200C-2010, U+20AA, U+25CC, U+FB1D-FB4F; font-display: swap; }
@@ -58,6 +60,13 @@
   .prog .fill { position: absolute; left: 0; top: 50%; height: 1px; margin-top: 0; background: var(--ink); width: 0; }
   .prog .fill.thick { height: 2px; margin-top: -.5px; }
 
+  /* full screen: only the book, a small way out in the corner */
+  .exitfull { display: none; }
+  .full header, .full footer, .full .under { display: none !important; }
+  .full #book { top: 0; bottom: 0; }
+  .full .exitfull { display: grid; place-items: center; position: fixed; top: 18px; inset-inline-end: 18px; width: 40px; height: 40px; border: 1px solid #d6d6d6; background: #fff; z-index: 7; cursor: pointer; }
+  .full .exitfull svg { width: 16px; height: 16px; }
+  .full .arrow { top: 50%; }
   /* TV mode: only the book, playing by itself, with a QR to add a wish */
   .tvqr, .tvstart { display: none; }
   .tv header, .tv footer, .tv .arrow, .tv .under { display: none !important; }
@@ -94,6 +103,7 @@
   </nav>
 </header>
 
+<button class="exitfull" id="exitFull" aria-label="יציאה ממסך מלא"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M6 2v4H2M10 2v4h4M10 14v-4h4M6 14v-4H2"/></svg></button>
 <div id="book" aria-label="מטר"></div>
 
 <button class="arrow l" id="left" aria-label="left"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M10 3 5 8l5 5"/></svg></button>
@@ -124,6 +134,6 @@
 
 <script>window.BOOK = {"name": "מטר", "sub": "תראו אותו גדל", "label": "בר מצווה", "credit": "באהבה, אמא, אבא, מידן ואייר", "line1": "שלוש עשרה שנים. סרטון אחד.", "story": "הוא הגיע אלינו קטן, גדל בבריכות, בנחלים ועל טרמפולינות, מוקף באנשים שאוהבים אותו. ועכשיו הוא בן שלוש עשרה.", "next": "לסרטון", "blurbLabel": "תקציר", "blurb": "מהבטן של אמא, דרך המגבת האדומה, הבריכות, הנחלים והטרמפולינות, ועד היום שבו הוא עולה לתורה. כל התמונות שצילמנו לאורך השנים חוזרות לחיים, בסרטון אחד.", "bless": [{"label": "מאמא ואבא", "title": "מטר שלנו,", "body": "שלוש עשרה שנים שאנחנו מסתכלים עליך גדל, ומתרגשים מחדש כל יום. אתה סקרן, מצחיק, אמיץ ועם לב ענק. תמשיך לטפס גבוה, לשאול שאלות ולהיות בדיוק מי שאתה. אנחנו תמיד פה, מאחוריך.", "sign": "מזל טוב, אמא ואבא"}, {"label": "ממידן", "title": "אחי,", "body": "אחי הקטן כבר לא כל כך קטן. תודה על כל הצחוקים, המשחקים והריבים שנגמרים בצחוק. אני גאה בך ותמיד אהיה בשבילך.", "sign": "מזל טוב, מידן"}, {"label": "מאייר", "title": "מטר,", "body": "אתה האח הכי טוב בעולם. תודה שאתה משחק איתי ומצחיק אותי. אני אוהב אותך המון.", "sign": "מזל טוב, אייר"}], "duo": "מטר ואייר", "fromLabel": "ברכה מאת", "inviteLabel": "ספר הברכות", "invite1": "גם אתם", "invite2": "רוצים לברך?", "inviteUrl": "danor.studio/matar/add", "again": "לצפייה שוב", "p_front": "כריכה", "p_page": "עמוד 1", "p_back": "תקציר", "dir": "rtl", "base": ""};</script>
 <script src="lib/hls.min.js"></script>
-<script type="module" src="book.js?v=1792617488"></script>
+<script type="module" src="book.js?v=1792618390"></script>
 </body>
 </html>

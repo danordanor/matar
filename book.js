@@ -43,6 +43,20 @@ function txt(g, s, x, y, size, weight = 400, color = INKL, align = "start", trac
   g.save(); g.font = `${weight} ${size}px "${FONT}"`; g.fillStyle = color; g.direction = T.dir; g.textAlign = align; g.textBaseline = "alphabetic";
   if (track) g.letterSpacing = track + "px"; g.fillText(s, x, y); g.restore();
 }
+// handwritten lines: pen-blue ink, each line a touch uneven, like real writing on a page
+const HAND = "Hand", PEN = "#1f2d5a";
+function hand(g, s, x, y, maxW, size, lh, maxLines = 99, color = PEN) {
+  g.save(); g.font = `400 ${size}px "${HAND}"`; g.direction = T.dir;
+  const words = s.replace(/\s+/g, " ").trim().split(" "), lines = []; let line = "";
+  for (const w of words) { const t = line ? line + " " + w : w; if (g.measureText(t).width > maxW && line) { lines.push(line); line = w; } else line = t; }
+  lines.push(line); if (lines.length > maxLines) { lines.length = maxLines; lines[maxLines - 1] += "…"; }
+  g.fillStyle = color; g.textAlign = "start"; g.textBaseline = "alphabetic";
+  lines.forEach((l, i) => {
+    const j = Math.sin(i * 2.3 + s.length) , k = Math.cos(i * 1.7 + s.length * .3);
+    g.save(); g.translate(x + j * 6, y + i * lh + k * 3); g.rotate((j * .6) * Math.PI / 180); g.fillText(l, 0, 0); g.restore();
+  });
+  g.restore(); return lines.length;
+}
 function wrap(g, s, x, y, maxW, size, lh, weight = 400, color = INKL) {
   g.save(); g.font = `${weight} ${size}px "${FONT}"`; g.direction = T.dir;
   const words = s.split(" "), lines = []; let line = "";
@@ -121,9 +135,9 @@ async function faces() {
   const blessing = (b, onBoard) => ({ kind: "page", draw: (g, w, h) => {
     if (onBoard) boardPaper(g, w, h); else paper(g, w, h);
     txt(g, b.label, sx(w), M + 24, 26, 400, GREY);
-    txt(g, b.title, sx(w), M + 190, 92, 600, INK, "start", -2);
-    const n = wrap(g, b.body, sx(w), M + 300, w - 2 * M, 44, 66, 400, "#2c2b28");
-    txt(g, b.sign, sx(w), h - M - 10, 40, 500, INK);
+    hand(g, b.title, sx(w), M + 190, w - 2 * M, 84, 90);
+    hand(g, b.body, sx(w), M + 310, w - 2 * M, 50, 78, 12);
+    hand(g, b.sign, sx(w), h - M - 10, w - 2 * M, 50, 60);
   } });
   // Iyar and Matar together: a loose 3 × 3 grid of full photos per page, each gently drifting
   const duoPage = (list, seed) => ({ kind: "page", live: true, draw: (g, w, h, t = 0) => {
@@ -151,7 +165,7 @@ async function faces() {
   const wishPage = (wsh, im) => ({ kind: "page", draw: (g, w, h) => {
     paper(g, w, h);
     txt(g, T.fromLabel, sx(w), M + 24, 26, 400, GREY);
-    txt(g, wsh.name, sx(w), M + 110, 64, 600, INK, "start", -1);
+    hand(g, wsh.name, sx(w), M + 110, w - 2 * M, 64, 70, 1);
     let y = M + 170;
     if (im) {
       const bw = w - 2 * M, bh = h * .42, k = Math.min(bw / im.width, bh / im.height), pw = im.width * k, ph = im.height * k;
@@ -160,12 +174,8 @@ async function faces() {
       g.shadowColor = "transparent"; g.drawImage(im, -pw / 2, -ph / 2, pw, ph); g.restore();
       y += bh + 90;
     } else y += 60;
-    const size = im ? 36 : 46, lh = size * 1.45, maxLines = Math.floor((h - M - 40 - y) / lh);
-    // keep long wishes on the page
-    g.font = `400 ${size}px "${FONT}"`; const words = wsh.message.replace(/\s+/g, " ").split(" "); const lines = []; let line = "";
-    for (const wd of words) { const t = line ? line + " " + wd : wd; if (g.measureText(t).width > w - 2 * M && line) { lines.push(line); line = wd; } else line = t; }
-    lines.push(line); if (lines.length > maxLines) { lines.length = maxLines; lines[maxLines - 1] += "…"; }
-    lines.forEach((l, i) => txt(g, l, sx(w), y + i * lh, size, 400, "#2c2b28"));
+    const size = im ? 40 : 50, lh = size * 1.5, maxLines = Math.floor((h - M - 40 - y) / lh);
+    hand(g, wsh.message, sx(w), y, w - 2 * M, size, lh, maxLines);   // long wishes are kept on the page
   } });
   const invite = { kind: "invite", draw: (g, w, h) => {
     paper(g, w, h);
@@ -321,7 +331,19 @@ $("right").onclick = () => (RTL ? prev() : next());
 $("openBook").onclick = () => go(1);
 $("closeBook").onclick = () => go(0);
 $("watch").onclick = () => go(FILM, { restart: state !== FILM });
-$("full").onclick = () => { const el = document.documentElement; if (document.fullscreenElement || document.webkitFullscreenElement) { (document.exitFullscreen || document.webkitExitFullscreen).call(document); } else if (el.requestFullscreen) el.requestFullscreen(); else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen(); };
+const isFull = () => document.body.classList.contains("full");
+function setFull(on) {
+  document.body.classList.toggle("full", on);
+  const el = document.documentElement;
+  try {
+    if (on && !document.fullscreenElement && !document.webkitFullscreenElement) (el.requestFullscreen || el.webkitRequestFullscreen || (() => {})).call(el);
+    if (!on && (document.fullscreenElement || document.webkitFullscreenElement)) (document.exitFullscreen || document.webkitExitFullscreen).call(document);
+  } catch (e) {}
+}
+$("full").onclick = (e) => { e.stopPropagation(); setFull(!isFull()); };
+$("exitFull").onclick = (e) => { e.stopPropagation(); setFull(false); };
+const fsChange = () => { if (!document.fullscreenElement && !document.webkitFullscreenElement && isFull() && !TV) document.body.classList.remove("full"); };
+document.addEventListener("fullscreenchange", fsChange); document.addEventListener("webkitfullscreenchange", fsChange);
 const wave = $("wave");
 $("mute").onclick = () => { video.muted = !video.muted; wave.style.opacity = video.muted ? 0 : 1; };
 video.addEventListener("ended", () => setTimeout(() => { if (state === FILM) go(FILM + 1); }, 700));
@@ -424,7 +446,7 @@ function frame() {
 }
 
 (async () => {
-  await Promise.race([new Promise((r) => setTimeout(r, 2500)), Promise.all([document.fonts.load(`500 100px "${FONT}"`, "מטר Matar"), document.fonts.load(`400 30px "${FONT}"`, "מטר Matar")]).catch(() => {})]);
+  await Promise.race([new Promise((r) => setTimeout(r, 2500)), Promise.all([document.fonts.load(`500 100px "${FONT}"`, "מטר Matar"), document.fonts.load(`400 30px "${FONT}"`, "מטר Matar"), document.fonts.load(`400 40px "${HAND}"`, "מטר, Matar")]).catch(() => {})]);
   const F = await faces(); F.forEach((f, i) => leaves.push(makeLeaf(f, i, F.length))); END = F.length; FILM = F.findIndex((f) => f[0].film); WISHES = F.length;
   go(0); camera.position.set(0, 0, fit() * 1.3);
   body.classList.add("ready");
