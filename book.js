@@ -81,72 +81,43 @@ function waves(g, w, h, col, bg) {      // seigaiha endpaper
   }
 }
 
-// ---------- page faces ----------
-// each face: draw(g, w, h, mirror) ; kind used for clicks
+// ---------- covers ----------
+const SHOTS = [6, 18, 58, 86, 114, 146];
 async function buildFaces() {
-  const shots = [6, 18, 44, 58, 72, 86, 100, 114, 128, 146];
-  const imgs = await Promise.all(shots.map((s) => loadImg(`${BASE}f/${s}.jpg`)));
-  const poster = await loadImg(`${BASE}poster.jpg`);
-  const num = (g, w, h, n) => text(g, String(n), w / 2, h - 70, 30, { font: SMALL, color: SOFT, dir: "ltr" });
-
-  const cover = { kind: "cover", hard: true, draw: (g, w, h) => {
+  const imgs = await Promise.all(SHOTS.map((s) => loadImg(`${BASE}f/${s}.jpg`)));
+  const cloth = (g, w, h) => {
     g.fillStyle = COVER; g.fillRect(0, 0, w, h);
     const id = g.getImageData(0, 0, w, h), d = id.data; for (let i = 0; i < d.length; i += 4) { const n = (Math.random() - .5) * 10; d[i] += n; d[i + 1] += n; d[i + 2] += n; } g.putImageData(id, 0, 0);
-    g.strokeStyle = GOLD; g.globalAlpha = .55; g.lineWidth = 2; g.strokeRect(56, 56, w - 112, h - 112); g.globalAlpha = 1;
-    text(g, T.name, w / 2, h * .42, 300, { color: GOLD });
-    g.fillStyle = GOLD; g.fillRect(w / 2 - 40, h * .54, 80, 2);
-    text(g, T.sub, w / 2, h * .6, 52, { color: GOLD });
-    seal(g, w / 2, h - 190, 46);
+    g.strokeStyle = GOLD; g.globalAlpha = .5; g.lineWidth = 2; g.strokeRect(48, 48, w - 96, h - 96); g.globalAlpha = 1;
+  };
+  const cover = { kind: "cover", draw: (g, w, h) => {
+    cloth(g, w, h);
+    const cols = 2, rows = 3, gap = 18, x0 = 116, y0 = 116, cw = (w - 2 * x0 - gap) / cols, ch = cw * 9 / 16;
+    imgs.forEach((im, i) => {
+      if (!im) return; const c = i % cols, r = Math.floor(i / cols);
+      const x = RTL ? w - x0 - (c + 1) * cw - c * gap : x0 + c * (cw + gap), y = y0 + r * (ch + gap);
+      const k = Math.max(cw / im.width, ch / im.height), iw = im.width * k, ih = im.height * k;
+      g.save(); g.beginPath(); g.rect(x, y, cw, ch); g.clip(); g.drawImage(im, x + (cw - iw) / 2, y + (ch - ih) / 2, iw, ih); g.restore();
+    });
+    const ty = y0 + rows * (ch + gap) + 150;
+    text(g, T.name, w / 2, ty, 190, { color: GOLD });
+    g.fillStyle = GOLD; g.fillRect(w / 2 - 34, ty + 105, 68, 2);
+    text(g, T.sub, w / 2, ty + 165, 46, { color: GOLD });
+    seal(g, w / 2, h - 132, 34);
   } };
-  const endpaper = { kind: "end", draw: (g, w, h) => waves(g, w, h, "rgba(205,176,122,.35)", COVER) };
-  const title = { kind: "title", draw: (g, w, h, m) => {
-    paper(g, w, h); gutter(g, w, h, m);
-    text(g, T.name, w / 2, h * .4, 230);
-    g.fillStyle = INK; g.fillRect(w / 2 - 30, h * .5, 60, 2);
-    text(g, T.line1, w / 2, h * .57, 50);
-    text(g, T.line2, w / 2, h * .57 + 66, 50, { color: SOFT });
+  const back = { kind: "back", draw: (g, w, h) => {
+    cloth(g, w, h);
+    text(g, T.blurbLabel, w / 2, 230, 34, { color: GOLD, font: SMALL, spacing: RTL ? 2 : 6 });
+    g.fillStyle = GOLD; g.fillRect(w / 2 - 34, 290, 68, 2);
+    const n = wrap(g, T.blurb, w / 2, 420, w - 250, 56, 86, { color: "#efe8da" });
+    const y = 420 + n * 86 + 110;
+    text(g, T.love, w / 2, y, 40, { color: GOLD });
+    playRing(g, w / 2, h - 300, 52, GOLD);
+    text(g, T.again, w / 2, h - 212, 34, { color: GOLD });
+    seal(g, w / 2, h - 110, 28);
   } };
-  const photoFace = (i, n) => ({ kind: "photo", draw: (g, w, h, m) => {
-    paper(g, w, h); gutter(g, w, h, m);
-    photo(g, imgs[i], 110, 160, w - 220, h - 400);
-    num(g, w, h, n);
-  } });
-  const film = { kind: "film", draw: (g, w, h, m) => {
-    g.fillStyle = "#121212"; g.fillRect(0, 0, w, h); gutter(g, w, h, m, .5);
-    if (poster) { const k = Math.max(w / poster.width, (h * .62) / poster.height); const pw = poster.width * k, ph = poster.height * k; g.save(); g.beginPath(); g.rect(0, h * .14, w, h * .62); g.clip(); g.drawImage(poster, (w - pw) / 2, h * .14 + (h * .62 - ph) / 2, pw, ph); g.fillStyle = "rgba(0,0,0,.25)"; g.fillRect(0, 0, w, h); g.restore(); }
-    playRing(g, w / 2, h * .45, 78, "#fff");
-    text(g, T.film, w / 2, h * .84, 64, { color: "#f4f1ea" });
-    text(g, "2:38", w / 2, h * .84 + 62, 28, { font: SMALL, color: "rgba(244,241,234,.6)", dir: "ltr" });
-  } };
-  const mazal = { kind: "mazal", draw: (g, w, h, m) => {
-    paper(g, w, h); gutter(g, w, h, m);
-    text(g, T.mazal1, w / 2, h * .44, 120);
-    text(g, T.mazal2, w / 2, h * .44 + 130, 120);
-    g.fillStyle = INK; g.fillRect(w / 2 - 30, h * .62, 60, 2);
-    text(g, T.love, w / 2, h * .68, 40, { color: SOFT });
-  } };
-  const back = { kind: "back", hard: true, draw: (g, w, h) => {
-    g.fillStyle = COVER; g.fillRect(0, 0, w, h);
-    g.strokeStyle = GOLD; g.globalAlpha = .55; g.lineWidth = 2; g.strokeRect(56, 56, w - 112, h - 112); g.globalAlpha = 1;
-    text(g, T.blurbLabel, w / 2, 210, 34, { color: GOLD, font: SMALL, spacing: RTL ? 2 : 6 });
-    const n = wrap(g, T.blurb, w / 2, 340, w - 260, 54, 82, { color: "#efe8da" });
-    playRing(g, w / 2, 340 + n * 82 + 150, 64, GOLD);
-    text(g, T.watch, w / 2, 340 + n * 82 + 270, 40, { color: GOLD });
-    seal(g, w / 2, h - 170, 34);
-  } };
-
-  // leaves: [front, back]
-  return [
-    [cover, endpaper],
-    [title, photoFace(0, 1)],
-    [photoFace(1, 2), photoFace(2, 3)],
-    [photoFace(3, 4), photoFace(4, 5)],
-    [photoFace(5, 6), photoFace(6, 7)],
-    [photoFace(7, 8), photoFace(8, 9)],
-    [photoFace(9, 10), film],
-    [mazal, { kind: "end2", draw: (g, w, h) => waves(g, w, h, "rgba(205,176,122,.35)", COVER) }],
-    [endpaper, back],
-  ];
+  const inside = { kind: "video", video: true, draw: (g, w, h) => { g.fillStyle = "#0d0d0d"; g.fillRect(0, 0, w, h); } };
+  return [[cover, inside], [inside, back]];
 }
 
 // ---------- three.js scene ----------
@@ -173,74 +144,91 @@ const ground = new THREE.Mesh(new THREE.PlaneGeometry(14, 14), new THREE.ShadowM
 ground.position.z = -.012; ground.receiveShadow = true; table.add(ground);
 const book = new THREE.Group(); table.add(book);
 
-const COLS = 36;
-const GAP = .0045;
+const COLS = 24;
+const GAP = .006;
 const leaves = [];
 
+// ---------- the film, living inside the book ----------
+const video = document.getElementById("film");
+const SRC = `${BASE}v/index.m3u8`;
+if (video.canPlayType("application/vnd.apple.mpegurl")) video.src = SRC;
+else if (window.Hls && Hls.isSupported()) { const h = new Hls({ maxBufferLength: 30 }); h.loadSource(SRC); h.attachMedia(video); }
+else video.src = SRC;
+const vtex = new THREE.VideoTexture(video); vtex.colorSpace = THREE.SRGBColorSpace;
+const posterTex = new THREE.TextureLoader().load(`${BASE}poster.jpg`); posterTex.colorSpace = THREE.SRGBColorSpace;
+// the 16:9 film fills the open spread (2 × CW by CH), cropped at the sides
+const SPAN = (2 * CW / CH) / (16 / 9) / 2;           // half of the visible width, in video u
+function halfMap(base, neg) {                          // u=0 at the spine → video centre
+  const t = base.clone(); t.wrapS = t.wrapT = THREE.ClampToEdgeWrapping;
+  t.repeat.set(neg ? -SPAN : SPAN, 1); t.offset.set(.5, 0); t.needsUpdate = true; return t;
+}
+const videoMats = [];
+
 function makeLeaf(faces, i, n) {
-  const hard = faces[0].hard || faces[1].hard;
-  const w = hard ? CW : W, h = hard ? CH : H;
+  const w = CW, h = CH;
   const geo = new THREE.BufferGeometry();
   const pos = new Float32Array((COLS + 1) * 2 * 3), uv = new Float32Array((COLS + 1) * 2 * 2), idx = [];
   for (let c = 0; c <= COLS; c++) for (let r = 0; r < 2; r++) { const k = c * 2 + r; uv[k * 2] = c / COLS; uv[k * 2 + 1] = r; }
   for (let c = 0; c < COLS; c++) { const a = c * 2, b = a + 1, d = a + 2, e = a + 3; if (S > 0) idx.push(a, d, b, b, d, e); else idx.push(a, b, d, b, e, d); }
   geo.setIndex(idx); geo.setAttribute("position", new THREE.BufferAttribute(pos, 3)); geo.setAttribute("uv", new THREE.BufferAttribute(uv, 2));
 
-  const tex = (face, mirror) => {
+  const mat = (face, side, mirror) => {
+    if (face.video) {
+      // which half of the frame this page shows depends on where it lies when open
+      const neg = (side === 1) === (S > 0);
+      const m = new THREE.MeshBasicMaterial({ map: halfMap(posterTex, neg), side: side ? THREE.BackSide : THREE.FrontSide, toneMapped: false });
+      m.userData = { neg }; videoMats.push(m); return m;
+    }
     const [c, g] = canvasFor(mirror); face.draw(g, c.width, c.height, mirror);
-    const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = renderer.capabilities.getMaxAnisotropy(); return t;
+    const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = renderer.capabilities.getMaxAnisotropy();
+    return new THREE.MeshStandardMaterial({ map: t, side: side ? THREE.BackSide : THREE.FrontSide, roughness: .6 });
   };
-  // front is seen from +z before turning; back after. Mirror so text reads correctly.
-  const mf = new THREE.MeshStandardMaterial({ map: tex(faces[0], S < 0), side: THREE.FrontSide, roughness: hard ? .55 : .9 });
-  const mb = new THREE.MeshStandardMaterial({ map: tex(faces[1], S > 0), side: THREE.BackSide, roughness: hard ? .55 : .9 });
-  const front = new THREE.Mesh(geo, mf), backM = new THREE.Mesh(geo, mb);
-  front.castShadow = backM.castShadow = true; front.receiveShadow = backM.receiveShadow = true;
+  const front = new THREE.Mesh(geo, mat(faces[0], 0, S < 0)), backM = new THREE.Mesh(geo, mat(faces[1], 1, S > 0));
+  front.castShadow = backM.castShadow = true; front.receiveShadow = true;
   front.userData = { leaf: i, side: 0, kind: faces[0].kind }; backM.userData = { leaf: i, side: 1, kind: faces[1].kind };
   const g = new THREE.Group(); g.add(front, backM); book.add(g);
-  const L = { i, n, w, h, hard, geo, group: g, p: 0, shown: 0, meshes: [front, backM] };
+  const L = { i, n, w, h, geo, group: g, p: 0, meshes: [front, backM] };
   layout(L, 0); return L;
 }
 
 function layout(L, p) {
-  const { geo, w, h, hard, i, n } = L;
+  const { geo, w, h, i, n } = L;
   const pos = geo.attributes.position.array;
-  const theta = Math.PI * p;
-  const bend = hard ? 0 : -1.15 * Math.sin(Math.PI * p);          // free edge lags behind
-  const lift = Math.sin(Math.PI * p) * (hard ? .02 : .05);
+  const theta = Math.PI * p, lift = Math.sin(Math.PI * p) * .03;
   const zRest = (1 - p) * (n - i) * GAP + p * (i + 1) * GAP;
-  let x = 0, z = 0; const ds = w / COLS;
   for (let c = 0; c <= COLS; c++) {
-    if (c > 0) { const a = theta + bend * ((c - .5) / COLS); x += Math.cos(a) * ds; z += Math.sin(a) * ds; }
+    const d = w * c / COLS, x = Math.cos(theta) * d, z = Math.sin(theta) * d;
     for (let r = 0; r < 2; r++) { const k = (c * 2 + r) * 3; pos[k] = S * x; pos[k + 1] = (r - .5) * h; pos[k + 2] = z + zRest + lift * (c / COLS); }
   }
   geo.attributes.position.needsUpdate = true; geo.computeVertexNormals(); geo.computeBoundingSphere();
 }
 
-// ---------- state ----------
+// a thin block of pages between the covers, so it reads as a book
+const block = new THREE.Mesh(new THREE.BoxGeometry(W, H, GAP * .8), new THREE.MeshStandardMaterial({ color: 0xf3eee4, roughness: 1 }));
+block.castShadow = true; block.receiveShadow = true; block.position.set(S * W / 2, 0, GAP * 1.4);
+
+// ---------- state: 0 closed (front) · 1 open (film) · 2 closed (back, the story) ----------
 let target = 0, offset = 0;
-const ui = { count: document.getElementById("count"), hint: document.getElementById("hint") };
+const body = document.body;
 function go(t) {
-  target = clamp(t, 0, leaves.length);
-  ui.count.textContent = `${target} / ${leaves.length}`;
-  ui.hint.classList.toggle("off", target !== 0);
-  document.body.classList.toggle("closed-back", target === leaves.length);
+  target = clamp(t, 0, 2);
+  body.dataset.state = ["front", "open", "back"][target];
+  if (target === 1) { video.play().catch(() => {}); } else video.pause();
 }
-window.bookNext = () => go(target + 1);
-window.bookPrev = () => go(target - 1);
+window.bookGo = go;
+video.addEventListener("playing", () => { for (const m of videoMats) { m.map = halfMap(vtex, m.userData.neg); m.needsUpdate = true; } }, { once: true });
+video.addEventListener("ended", () => setTimeout(() => go(2), 900));
 
 // ---------- size / camera fit ----------
-function resize() {
-  const w = host.clientWidth, h = host.clientHeight;
-  if (renderer.domElement.width !== Math.floor(w * renderer.getPixelRatio()) || renderer.domElement.height !== Math.floor(h * renderer.getPixelRatio())) renderer.setSize(w, h);
-  camera.aspect = w / h;
-  const open = target > 0 && target < leaves.length;
-  const needW = (open ? 2 * CW : CW) * 1.3, needH = CH * 1.5;
+function fit() {
+  const w = host.clientWidth, h = host.clientHeight, pr = renderer.getPixelRatio();
+  if (renderer.domElement.width !== Math.floor(w * pr) || renderer.domElement.height !== Math.floor(h * pr)) renderer.setSize(w, h);
+  camera.aspect = w / h; camera.updateProjectionMatrix();
+  const open = target === 1;
+  const needW = (open ? 2 * CW : CW) * (open ? 1.12 : 1.3), needH = CH * (open ? 1.5 : 1.55);
   const fov = camera.fov * Math.PI / 180;
-  const dH = needH / 2 / Math.tan(fov / 2), dW = needW / 2 / (Math.tan(fov / 2) * camera.aspect);
-  camera.userData.dist = Math.max(dH, dW);
-  camera.updateProjectionMatrix();
+  return Math.max(needH / 2 / Math.tan(fov / 2), needW / 2 / (Math.tan(fov / 2) * camera.aspect));
 }
-window.addEventListener("resize", resize);
 
 // ---------- pointer ----------
 const ray = new THREE.Raycaster(), m = new THREE.Vector2(), look = { x: 0, y: 0 };
@@ -248,53 +236,51 @@ let down = null;
 renderer.domElement.addEventListener("pointermove", (e) => {
   const r = renderer.domElement.getBoundingClientRect();
   look.x = (e.clientX - r.left) / r.width * 2 - 1; look.y = (e.clientY - r.top) / r.height * 2 - 1;
-  const hit = pick(e); renderer.domElement.style.cursor = hit ? "pointer" : "default";
+  renderer.domElement.style.cursor = pick(e) ? "pointer" : "default";
 });
-renderer.domElement.addEventListener("pointerdown", (e) => { down = { x: e.clientX, y: e.clientY, t: performance.now() }; });
+renderer.domElement.addEventListener("pointerdown", (e) => { down = { x: e.clientX }; });
 renderer.domElement.addEventListener("pointerup", (e) => {
   if (!down) return; const dx = e.clientX - down.x; down = null;
-  if (Math.abs(dx) > 40) { (dx * S < 0) ? go(target + 1) : go(target - 1); return; }   // swipe toward spine = next
+  if (Math.abs(dx) > 40) return go(target + (dx * S < 0 ? 1 : -1));
   const hit = pick(e); if (!hit) return;
-  const { kind, leaf, side } = hit.object.userData;
-  if (kind === "film" || kind === "back") return window.openFilm && window.openFilm();
-  if (side === 0 && leaf === target) go(target + 1);          // unturned page → forward
-  else if (side === 1 && leaf === target - 1) go(target - 1); // turned page → back
+  const kind = hit.object.userData.kind;
+  if (kind === "cover") go(1);
+  else if (kind === "back") go(1), video.currentTime = 0;
+  else if (kind === "video") video.paused ? video.play() : video.pause();
 });
 function pick(e) {
   const r = renderer.domElement.getBoundingClientRect();
   m.set((e.clientX - r.left) / r.width * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1);
   ray.setFromCamera(m, camera);
-  const hits = ray.intersectObjects(leaves.flatMap((l) => l.meshes), false);
-  return hits.find((h) => { const L = leaves[h.object.userData.leaf]; return h.object.userData.side === 0 ? L.p < .5 : L.p >= .5; }) || hits[0];
+  return ray.intersectObjects(leaves.flatMap((l) => l.meshes), false)[0];
 }
 window.addEventListener("keydown", (e) => {
-  if (document.body.classList.contains("film-open")) return;
   const fwd = RTL ? "ArrowLeft" : "ArrowRight", bwd = RTL ? "ArrowRight" : "ArrowLeft";
-  if (e.key === fwd || e.key === " ") { e.preventDefault(); go(target + 1); }
+  if (e.key === " ") { e.preventDefault(); if (target === 1) video.paused ? video.play() : video.pause(); else go(1); }
+  else if (e.key === fwd) go(target + 1);
   else if (e.key === bwd) go(target - 1);
 });
 
 // ---------- loop ----------
-const clock = new THREE.Clock();
+const clock = new THREE.Clock(); const camGoal = new THREE.Vector3();
 function frame() {
   const dt = Math.min(.05, clock.getDelta()), t = clock.elapsedTime;
-  // turn leaves one after another
   for (const L of leaves) {
     const goal = L.i < target ? 1 : 0;
-    const speed = L.hard ? 1 / 1.1 : 1 / .95;
-    if (L.p !== goal) {
-      const ahead = goal ? leaves.slice(0, L.i).every((o) => o.p > .12 || o.i >= target) : leaves.slice(L.i + 1).every((o) => o.p < .88 || o.i < target);
-      if (ahead) { L.p = goal ? Math.min(1, L.p + dt * speed) : Math.max(0, L.p - dt * speed); layout(L, ease(L.p)); }
-    }
+    if (L.p !== goal) { L.p = goal ? Math.min(1, L.p + dt / 1.2) : Math.max(0, L.p - dt / 1.2); layout(L, ease(L.p)); }
   }
-  // keep the composition centred like a postcard
-  const want = target === 0 ? -S * CW / 2 : target === leaves.length ? S * CW / 2 : 0;
-  offset += (want - offset) * Math.min(1, dt * 3.2); book.position.x = offset;
-  resize();
-  const dist = camera.userData.dist;
-  camera.position.lerp(new THREE.Vector3(look.x * .25, -look.y * .12 + .05, dist), Math.min(1, dt * 2.5));
-  camera.lookAt(0, 0, 0);
-  book.position.y = Math.sin(t * .8) * .006;
+  // the page block flips with whichever side is down
+  const resting = leaves.every((L) => L.p === 0 || L.p === 1);
+  block.visible = resting && target !== 1;
+  block.position.x = (target === 2 ? -S : S) * W / 2;
+  // centre the composition like a postcard; look straight at the film when open
+  const want = target === 0 ? -S * CW / 2 : target === 2 ? S * CW / 2 : 0;
+  offset += (want - offset) * Math.min(1, dt * 3); book.position.x = offset;
+  const tilt = target === 1 ? -.12 : -.5; table.rotation.x += (tilt - table.rotation.x) * Math.min(1, dt * 2.2);
+  const dist = fit(), still = target === 1 ? .25 : 1;
+  camGoal.set(look.x * .25 * still, -look.y * .12 * still + .04, dist);
+  camera.position.lerp(camGoal, Math.min(1, dt * 2.5)); camera.lookAt(0, 0, 0);
+  book.position.y = Math.sin(t * .8) * .006 * still;
   renderer.render(scene, camera);
   requestAnimationFrame(frame);
 }
@@ -304,7 +290,8 @@ function frame() {
   await Promise.race([new Promise((r) => setTimeout(r, 2500)), Promise.all([document.fonts.load(`400 100px "${DISPLAY}"`, "מטר Matar"), document.fonts.load(`400 30px "${SMALL}"`), document.fonts.load(`700 40px "Noto Sans JP"`)]).catch(() => {})]);
   const faces = await buildFaces();
   faces.forEach((f, i) => leaves.push(makeLeaf(f, i, faces.length)));
-  offset = -S * CW / 2; go(0); resize(); camera.position.set(0, 0, camera.userData.dist * 1.25);
-  document.body.classList.add("ready");
+  book.add(block);
+  offset = -S * CW / 2; go(0); camera.position.set(0, 0, fit() * 1.25);
+  body.classList.add("ready");
   frame();
 })();
