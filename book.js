@@ -46,6 +46,7 @@ const PAPER = "#f5f3ef", INK = "#141414", GREY = "#8c8a85";
 async function faces() {
   const imgs = await Promise.all(SHOTS.map((s) => loadImg(`${BASE}f/${s}.jpg`)));
   const IMG = Object.fromEntries(SHOTS.map((s, i) => [s, imgs[i]]));
+  const DUO = await Promise.all(Array.from({ length: 18 }, (_, i) => loadImg(`${BASE}d/${String(i + 1).padStart(2, "0")}.jpg`)));
   const M = 92;
   const sx = (w) => RTL ? w - M : M;
   const front = (g, w, h) => {
@@ -72,7 +73,12 @@ async function faces() {
     txt(g, T.credit, sx(w), h - M, 28, 400, "rgba(220,216,207,.75)");
   };
   const dark = (g, w, h) => { g.fillStyle = "#232220"; g.fillRect(0, 0, w, h); };
-  const paper = (g, w, h) => { g.fillStyle = PAPER; g.fillRect(0, 0, w, h); const id = g.getImageData(0, 0, w, h), d = id.data; for (let i = 0; i < d.length; i += 4) { const n = (Math.random() - .5) * 5; d[i] += n; d[i + 1] += n; d[i + 2] += n; } g.putImageData(id, 0, 0); };
+  const paperCache = {};
+  const paper = (g, w, h) => {
+    const key = w + "x" + h;
+    if (!paperCache[key]) { const c = document.createElement("canvas"); c.width = w; c.height = h; const q = c.getContext("2d"); q.fillStyle = PAPER; q.fillRect(0, 0, w, h); const id = q.getImageData(0, 0, w, h), d = id.data; for (let i = 0; i < d.length; i += 4) { const n = (Math.random() - .5) * 5; d[i] += n; d[i + 1] += n; d[i + 2] += n; } q.putImageData(id, 0, 0); paperCache[key] = c; }
+    g.drawImage(paperCache[key], 0, 0);
+  };
   const folio = (g, w, h, n) => txt(g, String(n).padStart(2, "0"), sx(w), M + 24, 26, 400, GREY);
   // the inside of a board: paper with a cloth rim where the board is larger than the page
   const boardPaper = (g, w, h) => {
@@ -108,12 +114,30 @@ async function faces() {
     const n = wrap(g, b.body, sx(w), M + 300, w - 2 * M, 44, 66, 400, "#2c2b28");
     txt(g, b.sign, sx(w), h - M - 10, 40, 500, INK);
   } });
+  // Iyar and Matar together: a loose 3 × 3 grid of full photos per page, each gently drifting
+  const duoPage = (list, seed) => ({ kind: "page", live: true, draw: (g, w, h, t = 0) => {
+    paper(g, w, h);
+    const cols = 3, rows = 3, mx = 56, my = 70, cw = (w - 2 * mx) / cols, ch = (h - 2 * my - 40) / rows;
+    list.forEach((im, i) => {
+      if (!im) return; const c = i % cols, r = Math.floor(i / cols);
+      const k = Math.min(cw * .86 / im.width, ch * .86 / im.height), pw = im.width * k, ph = im.height * k;
+      const rnd = (n) => Math.sin((i + 1) * 12.9898 + seed * 78.233 + n) * .5;     // stable jitter per photo
+      const cx = mx + (RTL ? cols - 1 - c : c) * cw + cw / 2 + rnd(1) * 18, cy = my + r * ch + ch / 2 + rnd(2) * 14;
+      const ang = rnd(3) * 7 + Math.sin(t * .5 + i * 1.3) * .5, bob = Math.sin(t * .6 + i * 1.7) * 3;
+      g.save(); g.translate(cx, cy + bob); g.rotate(ang * Math.PI / 180);
+      g.shadowColor = "rgba(0,0,0,.16)"; g.shadowBlur = 14; g.shadowOffsetY = 5;
+      g.fillStyle = "#fff"; g.fillRect(-pw / 2 - 9, -ph / 2 - 9, pw + 18, ph + 18);
+      g.shadowColor = "transparent"; g.drawImage(im, -pw / 2, -ph / 2, pw, ph); g.restore();
+    });
+    txt(g, T.duo, sx(w), h - 40, 24, 400, GREY);
+  } });
   const [parents, meidan, iyar] = T.bless;
   // leaf = [front, back]; spread k shows [leaf k-1 back (right), leaf k front (left)]
   return [
     [{ kind: "front", draw: front, hard: true }, scatter],
     [blessing(parents), blessing(meidan)],
-    [blessing(iyar), { kind: "inner", draw: dark }],
+    [blessing(iyar), duoPage(DUO.slice(0, 9), 1)],
+    [duoPage(DUO.slice(9), 2), { kind: "inner", draw: dark }],
     [{ kind: "inner", draw: dark, hard: true }, { kind: "back", draw: back, hard: true }],
   ];
 }
@@ -215,6 +239,11 @@ function go(s, opts = {}) {
   else video.pause();
 }
 window.bookGo = go;
+// turn the pages by themselves once the book is open, until the video; any manual move restarts the wait
+const AUTO = 7;
+let autoT = 0;
+const userMove = () => { autoT = 0; };
+addEventListener("pointerdown", userMove); addEventListener("keydown", userMove);
 const next = () => go(state + 1), prev = () => go(state - 1);
 $("left").onclick = () => (RTL ? next() : prev());
 $("right").onclick = () => (RTL ? prev() : next());
@@ -312,7 +341,8 @@ function frame() {
   yaw += (wantYaw - yaw) * Math.min(1, dt * 3); stage.rotation.y = yaw + look.x * .05 * calm;
   stage.rotation.x = look.y * .03 * calm;
   goal.set(0, 0, fit()); camera.position.lerp(goal, Math.min(1, dt * 3)); camera.lookAt(0, 0, 0);
-  for (const L of live) { if (state <= 1 || leaves[L.leaf].p < 1) { L.face.draw(L.g, L.c.width, L.c.height, clock.elapsedTime); L.t.needsUpdate = true; } }
+  for (const L of live) { const lf = leaves[L.leaf]; if (Math.abs(L.leaf - state) <= 1 || (lf.p > 0 && lf.p < 1)) { L.face.draw(L.g, L.c.width, L.c.height, clock.elapsedTime); L.t.needsUpdate = true; } }
+  if (state > 0 && state < FILM && leaves.every((L) => L.p === 0 || L.p === 1)) { autoT += dt; if (autoT > AUTO) { autoT = 0; go(state + 1); } } else autoT = 0;
   if (!scrub) bar();
   renderer.render(scene, camera);
   requestAnimationFrame(frame);
