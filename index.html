@@ -4,9 +4,9 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>מטר · 13</title>
-<meta name="description" content="תראו אותו גדל. מטר, בר מצווה · 29.10.2026">
+<meta name="description" content="תראו אותו גדל.">
 <meta property="og:title" content="מטר · 13">
-<meta property="og:description" content="תראו אותו גדל. בר מצווה · 29.10.2026">
+<meta property="og:description" content="תראו אותו גדל.">
 <meta property="og:image" content="poster.jpg">
 <meta name="theme-color" content="#000000">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -41,24 +41,17 @@
   .rv.in { opacity: 1; transform: none; }
   .d1 { transition-delay: .12s; } .d2 { transition-delay: .24s; } .d3 { transition-delay: .36s; }
 
-  /* ---------- hero ---------- */
-  .hero { position: relative; height: 100svh; min-height: 560px; color: var(--light); background: #000; overflow: hidden; cursor: pointer; display: grid; place-items: center; }
-  .hero::before { content: ""; position: absolute; inset: 0; background: url(poster.jpg) center / cover no-repeat; filter: grayscale(.3) brightness(.45); transform: scale(1.07); animation: breathe 16s var(--ease) infinite alternate; }
-  .hero::after { content: ""; position: absolute; inset: 0; background: radial-gradient(ellipse at center, rgba(0,0,0,0) 25%, rgba(0,0,0,.7) 100%); }
-  @keyframes breathe { to { transform: scale(1); } }
-  .hero .title { position: relative; z-index: 1; text-align: center; }
-  .hero h1 { font-family: var(--serif); font-weight: 300; font-size: clamp(110px, 22vw, 300px); line-height: .9; opacity: 0; transform: translateY(18px); animation: rise 1.6s var(--ease) .25s forwards; }
-  .hero .tag { margin-top: clamp(14px, 2vw, 26px); font-family: var(--serif); font-weight: 300; font-size: clamp(22px, 2.6vw, 34px); opacity: 0; animation: rise 1.4s var(--ease) .7s forwards; }
-  .hero .meta { margin-top: 14px; font-size: 14px; letter-spacing: .04em; font-weight: 300; color: rgba(244,241,234,.6); opacity: 0; animation: rise 1.4s var(--ease) .95s forwards; }
-  .hero .meta span { margin: 0 .9em; opacity: .5; }
-  .hero .play { position: absolute; z-index: 1; left: 50%; bottom: calc(var(--pad) + env(safe-area-inset-bottom)); transform: translateX(-50%); opacity: 0; animation: rise 1.4s var(--ease) 1.3s forwards; }
-  .scrollcue { position: absolute; z-index: 1; right: var(--pad); bottom: var(--pad); width: 1px; height: 56px; background: rgba(244,241,234,.25); overflow: hidden; }
-  .scrollcue::after { content: ""; position: absolute; left: 0; top: -40%; width: 1px; height: 40%; background: var(--light); animation: drip 2.4s var(--ease) infinite; }
-  @keyframes drip { to { top: 100%; } }
-  @keyframes rise { to { opacity: 1; transform: none; } }
-  .hero .play { transform: translateX(-50%) translateY(18px); }
-  @keyframes riseX { to { opacity: 1; transform: translateX(-50%); } }
-  .hero .play { animation-name: riseX; }
+  /* ---------- intro + player card ---------- */
+  .intro { padding: clamp(64px, 10vw, 120px) 0 clamp(40px, 6vw, 80px); text-align: center; }
+  .intro h1 { font-family: var(--serif); font-weight: 300; font-size: clamp(96px, 16vw, 220px); line-height: .9; }
+  .intro .tag { margin-top: 14px; font-family: var(--serif); font-weight: 300; font-size: clamp(22px, 2.4vw, 32px); color: var(--soft); }
+  .card { position: relative; display: block; width: 100%; margin-top: clamp(40px, 6vw, 72px); aspect-ratio: 16 / 9; overflow: hidden; background: #000; border-radius: 4px; }
+  .card img { width: 100%; height: 100%; object-fit: cover; transition: transform 1.6s var(--ease), filter 1.2s var(--ease); filter: brightness(.82); }
+  .card:hover img { transform: scale(1.025); filter: brightness(.7); }
+  .pbtn { position: absolute; left: 50%; top: 50%; width: clamp(72px, 8vw, 104px); aspect-ratio: 1; transform: translate(-50%, -50%); border-radius: 50%; border: 1px solid rgba(255,255,255,.85); background: rgba(255,255,255,.08); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); transition: transform .6s var(--ease), background .6s var(--ease); }
+  .pbtn::after { content: ""; position: absolute; left: 50%; top: 50%; margin: -11px 0 0 -6px; border-style: solid; border-width: 11px 0 11px 18px; border-color: transparent transparent transparent #fff; }
+  .card:hover .pbtn { transform: translate(-50%, -50%) scale(1.08); background: rgba(255,255,255,.18); }
+  .len { position: absolute; left: 20px; bottom: 16px; color: #fff; font: 300 13px/1 "Inter", sans-serif; letter-spacing: .08em; }
 
   /* ---------- sections ---------- */
   .wrap { width: min(1180px, 100% - 2 * var(--pad)); margin-inline: auto; }
@@ -67,7 +60,7 @@
   .rule { height: 1px; background: var(--hair); transform-origin: right; transform: scaleX(0); transition: transform 1.6s var(--ease); }
   .rule.in { transform: scaleX(1); }
 
-  .statement h2, .event h2, .closing h2 { text-wrap: balance; }
+  .statement h2, .closing h2 { text-wrap: balance; }
   .statement h2 { font-family: var(--serif); font-weight: 300; font-size: clamp(44px, 7.4vw, 108px); line-height: 1.02; letter-spacing: -.01em; margin-top: 28px; }
   .statement h2 em { font-style: normal; color: var(--soft); }
   .statement p { margin-top: 40px; max-width: 34em; font-size: clamp(17px, 1.5vw, 20px); line-height: 1.75; font-weight: 300; color: #3b3832; }
@@ -81,40 +74,14 @@
   .strip figure:hover img { transform: scale(1.04); filter: saturate(1.05); }
   @keyframes drift { to { transform: translateX(-50%); } }
 
-  /* chapters */
-  .chapters { display: grid; grid-template-columns: repeat(3, 1fr); gap: clamp(28px, 4vw, 64px); margin-top: 64px; }
-  .ch { border-top: 1px solid var(--ink); padding-top: 22px; }
-  .ch .n { font-family: "Inter", sans-serif; font-size: 12px; letter-spacing: .2em; color: var(--soft); }
-  .ch h3 { font-family: var(--serif); font-weight: 400; font-size: clamp(30px, 3vw, 40px); margin-top: 18px; }
-  .ch p { margin-top: 14px; font-size: 16px; line-height: 1.7; font-weight: 300; color: #3b3832; }
-  .ch .yr { margin-top: 20px; font-family: "Inter", sans-serif; font-size: 12px; letter-spacing: .14em; color: var(--soft); direction: ltr; text-align: right; }
-
-  /* quote */
-  .quote { text-align: center; }
-  .quote blockquote { font-family: var(--serif); font-weight: 300; font-size: clamp(36px, 5.6vw, 80px); line-height: 1.12; max-width: 12em; margin: 0 auto; text-wrap: balance; }
-  .quote .sub { margin-top: 30px; font-size: 14px; letter-spacing: .04em; color: var(--soft); font-weight: 300; }
-
-  /* event */
-  .event { display: grid; grid-template-columns: 1fr 1fr; gap: clamp(32px, 6vw, 96px); align-items: end; }
-  .event .date { font-family: "Inter", sans-serif; font-weight: 300; font-size: clamp(64px, 10vw, 150px); line-height: .9; letter-spacing: -.03em; direction: ltr; text-align: right; }
-  .event h2 { font-family: var(--serif); font-weight: 300; font-size: clamp(36px, 4.4vw, 60px); line-height: 1.1; }
-  .event p { margin-top: 16px; font-size: 17px; font-weight: 300; color: #3b3832; line-height: 1.7; }
-
   /* closing */
-  .closing { position: relative; background: #000; color: var(--light); text-align: center; overflow: hidden; cursor: pointer; }
-  .closing::before { content: ""; position: absolute; inset: 0; background: url(f/142.jpg) center / cover; filter: grayscale(.4) brightness(.35); transform: scale(1.05); transition: transform 2s var(--ease); }
-  .closing:hover::before { transform: scale(1); }
-  .closing .wrap { position: relative; }
-  .closing h2 { font-family: var(--serif); font-weight: 300; font-size: clamp(64px, 12vw, 180px); line-height: 1; }
+  .closing { text-align: center; padding-top: clamp(40px, 6vw, 80px); }
+  .closing h2 { font-family: var(--serif); font-weight: 300; font-size: clamp(56px, 10vw, 150px); line-height: 1; }
   .closing .play { margin-top: 36px; }
   footer { padding: 36px 0 calc(36px + env(safe-area-inset-bottom)); font-size: 13px; color: var(--soft); font-weight: 300; }
-  footer .wrap { display: flex; justify-content: space-between; gap: 16px; }
+  footer .wrap { text-align: center; }
 
-  @media (max-width: 760px) {
-    .chapters, .event { grid-template-columns: 1fr; }
-    .event .date { text-align: right; }
-    footer .wrap { flex-direction: column; }
-  }
+
 
   /* ---------- player overlay ---------- */
   .player { position: fixed; inset: 0; z-index: 50; background: #000; color: var(--light); opacity: 0; visibility: hidden; transition: opacity .8s var(--ease), visibility 0s linear .8s; cursor: pointer; }
@@ -124,7 +91,7 @@
   .player.idle .ui { opacity: 0; } .player.idle { cursor: none; }
 
   .bar { position: absolute; direction: ltr; left: var(--pad); right: var(--pad); bottom: calc(var(--pad) + env(safe-area-inset-bottom)); display: flex; align-items: center; gap: 18px; pointer-events: auto; }
-  .time { font: 300 12px/1 "Inter", sans-serif; letter-spacing: .08em; font-variant-numeric: tabular-nums; min-width: 3.4em; text-shadow: 0 0 12px rgba(0,0,0,.6); }
+  .time { font: 300 13px/1 "Inter", sans-serif; letter-spacing: .08em; font-variant-numeric: tabular-nums; min-width: 3.4em; text-shadow: 0 0 12px rgba(0,0,0,.6); }
   .time.end { text-align: right; }
   .track { position: relative; flex: 1; height: 28px; cursor: pointer; }
   .line, .fill, .buffer { position: absolute; left: 0; top: 50%; height: 1px; margin-top: -.5px; }
@@ -154,8 +121,8 @@
 
   .glyph { position: absolute; left: 50%; top: 50%; width: 64px; height: 64px; margin: -32px 0 0 -32px; pointer-events: none; opacity: 0; transform: scale(.8); transition: opacity .5s var(--ease), transform .5s var(--ease); }
   .player.paused .glyph { opacity: .9; transform: none; }
-  .glyph::before, .glyph::after { content: ""; position: absolute; top: 18px; bottom: 18px; width: 1px; background: var(--light); }
-  .glyph::before { left: 26px; } .glyph::after { right: 26px; }
+  .glyph { border-radius: 50%; border: 1px solid rgba(255,255,255,.85); width: 96px; height: 96px; margin: -48px 0 0 -48px; }
+  .glyph::after { content: ""; position: absolute; left: 50%; top: 50%; margin: -11px 0 0 -6px; border-style: solid; border-width: 11px 0 11px 18px; border-color: transparent transparent transparent #fff; }
 
   .outro { position: absolute; inset: 0; display: grid; place-items: center; text-align: center; background: rgba(0,0,0,.72); opacity: 0; visibility: hidden; transition: opacity 1.4s var(--ease), visibility 0s linear 1.4s; }
   .player.ended .outro { opacity: 1; visibility: visible; transition: opacity 1.4s var(--ease); }
@@ -168,86 +135,41 @@
 </head>
 <body>
 
-<header class="hero" data-play>
-  <div class="title">
-    <h1>מטר</h1>
-    <p class="tag">תראו אותו גדל.</p>
-    <p class="meta">בר מצווה<span>·</span>29.10.2026</p>
-  </div>
-  <button class="play" data-play><i></i>Play<i></i></button>
-  <div class="scrollcue" aria-hidden="true"></div>
-</header>
-
-<section class="block statement">
-  <div class="wrap">
-    <div class="rule rv"></div>
-    <p class="kicker rv d1" style="margin-top:22px">13 שנים · 2:38 דקות</p>
-    <h2 class="rv d2">שלוש עשרה שנים.<br><em>סרטון אחד.</em></h2>
-    <p class="rv d3">מהבטן של אמא, דרך המגבת האדומה, הבריכות, הנחלים והטרמפולינות, ועד היום שבו הוא עולה לתורה. כל התמונות שצילמנו לאורך השנים, חוזרות לחיים ברצף אחד.</p>
-  </div>
-</section>
-
-<div class="strip" aria-label="רגעים מהסרטון">
-  <div class="row" id="row"></div>
-</div>
-
-<section class="block">
-  <div class="wrap">
-    <p class="kicker rv">שלושה פרקים</p>
-    <div class="chapters">
-      <article class="ch rv">
-        <div class="n">01</div>
-        <h3>ההתחלה</h3>
-        <p>עוד לפני שנולד, כבר חיכינו לו. תינוק קטן במגבת אדומה, על הגלשן בבריכה, בידיים של אבא.</p>
-        <div class="yr">2013 — 2015</div>
-      </article>
-      <article class="ch rv d1">
-        <div class="n">02</div>
-        <h3>הגדילה</h3>
-        <p>תות בפה, פסטה על האצבעות, נחלים, קטיף, טרמפולינה וגיטרה. ילד שתמיד טיפס עוד קצת גבוה.</p>
-        <div class="yr">2016 — 2022</div>
-      </article>
-      <article class="ch rv d2">
-        <div class="n">03</div>
-        <h3>היום</h3>
-        <p>גלים, חבלים וחברים. אח גדול, אח קטן, ומי שהוא עכשיו. שלוש עשרה, ובדיוק בתחילת הדרך.</p>
-        <div class="yr">2023 — 2026</div>
-      </article>
+<main>
+  <section class="intro">
+    <div class="wrap">
+      <h1 class="rv">מטר</h1>
+      <p class="tag rv d1">תראו אותו גדל.</p>
+      <button class="card rv d2" data-play aria-label="נגן את הסרטון">
+        <img src="poster.jpg" alt="">
+        <span class="pbtn" aria-hidden="true"></span>
+        <span class="len" dir="ltr">2:38</span>
+      </button>
     </div>
-  </div>
-</section>
+  </section>
 
-<section class="block quote" style="padding-top:0">
-  <div class="wrap">
-    <div class="rule rv" style="margin-bottom:clamp(80px,10vw,140px)"></div>
-    <blockquote class="rv">יש רגעים שרוצים לראות שוב, ושוב, ושוב.</blockquote>
-    <p class="sub rv d1">צפו עם סאונד</p>
-  </div>
-</section>
-
-<section class="block" style="padding-top:0">
-  <div class="wrap event">
-    <div>
-      <p class="kicker rv">נתראה בבר מצווה</p>
-      <h2 class="rv d1" style="margin-top:22px">חוגגים איתו<br>את השלוש עשרה.</h2>
-      <p class="rv d2">בית אוצרין, יפו</p>
+  <section class="block statement">
+    <div class="wrap">
+      <div class="rule rv"></div>
+      <h2 class="rv d1">שלוש עשרה שנים.<br><em>סרטון אחד.</em></h2>
+      <p class="rv d2">מהבטן של אמא, דרך המגבת האדומה, הבריכות, הנחלים והטרמפולינות, ועד היום שבו הוא עולה לתורה. כל התמונות שצילמנו, חוזרות לחיים ברצף אחד.</p>
     </div>
-    <div class="date rv d2">29.10.26</div>
-  </div>
-</section>
+  </section>
 
-<section class="block closing" data-play>
-  <div class="wrap">
-    <h2 class="rv">מזל טוב, מטר</h2>
-    <button class="play rv d1" data-play><i></i>Watch<i></i></button>
+  <div class="strip" aria-label="רגעים מהסרטון">
+    <div class="row" id="row"></div>
   </div>
-</section>
+
+  <section class="block closing">
+    <div class="wrap">
+      <h2 class="rv">מזל טוב, מטר</h2>
+      <button class="play rv d1" data-play><i></i>Play<i></i></button>
+    </div>
+  </section>
+</main>
 
 <footer>
-  <div class="wrap">
-    <span>באהבה, אמא, אבא, מידן ואייר</span>
-    <span dir="ltr">2013 — 2026</span>
-  </div>
+  <div class="wrap"><span>באהבה, אמא, אבא, מידן ואייר</span></div>
 </footer>
 
 <!-- player -->
@@ -286,7 +208,7 @@
   const $ = (id) => document.getElementById(id);
 
   // film strip (doubled for a seamless loop)
-  const shots = [6, 18, 44, 58, 72, 86, 100, 114, 128, 142];
+  const shots = [6, 18, 44, 58, 72, 86, 100, 114, 128, 146];
   const row = $("row");
   [...shots, ...shots].forEach((s) => { const f = document.createElement("figure"); f.innerHTML = `<img src="f/${s}.jpg" alt="" loading="lazy">`; f.dataset.t = s; f.dataset.play = ""; row.appendChild(f); });
 
