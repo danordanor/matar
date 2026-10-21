@@ -74,38 +74,46 @@ async function faces() {
   const dark = (g, w, h) => { g.fillStyle = "#232220"; g.fillRect(0, 0, w, h); };
   const paper = (g, w, h) => { g.fillStyle = PAPER; g.fillRect(0, 0, w, h); const id = g.getImageData(0, 0, w, h), d = id.data; for (let i = 0; i < d.length; i += 4) { const n = (Math.random() - .5) * 5; d[i] += n; d[i + 1] += n; d[i + 2] += n; } g.putImageData(id, 0, 0); };
   const folio = (g, w, h, n) => txt(g, String(n).padStart(2, "0"), sx(w), M + 24, 26, 400, GREY);
-  // page 1: a few words on one side, moving photos on the other
-  const page1 = { kind: "page", draw: (g, w, h) => {
-    // printed on the inside of the board: keep a cloth rim where the board is larger than the paper
+  // the inside of a board: paper with a cloth rim where the board is larger than the page
+  const boardPaper = (g, w, h) => {
     paper(g, w, h); const rx = Math.round(w * (CW - W) / CW), ry = Math.round(h * (CH - H) / CH / 2);
     g.fillStyle = "#232220"; g.fillRect(RTL ? w - rx : 0, 0, rx, h); g.fillRect(0, 0, w, ry); g.fillRect(0, h - ry, w, ry);
-    txt(g, T.label, sx(w), M + 24, 26, 400, GREY);
-    txt(g, T.name, sx(w), h * .40, 220, 600, INK, "start", -4);
-    txt(g, T.line1, sx(w), h * .40 + 90, 40, 500, INK);
-    wrap(g, T.story, sx(w), h - M - 330, w - 2 * M, 46, 66, 400, "#3a3936");
-    txt(g, T.next + "  " + (RTL ? "←" : "→"), sx(w), h - M, 30, 500, INK);
+    return { rx, ry };
+  };
+  // scattered photos, full frame (never cropped), each drifting very slightly
+  const LAYOUT = [ // [shot, cx, cy, width, angle]  in page fractions
+    [6,   .30, .14, .50, -4], [18, .70, .20, .52, 3], [44, .34, .34, .50, 2.5],
+    [72,  .68, .44, .54, -3], [58, .30, .57, .50, -2], [114, .70, .67, .52, 3.5],
+    [146, .40, .82, .56, -1.5],
+  ];
+  const scatter = { kind: "page", live: true, draw: (g, w, h, t = 0) => {
+    const { rx, ry } = boardPaper(g, w, h);
+    const iw0 = w - rx;                                   // the paper part of the board
+    const ox = RTL ? 0 : rx;
+    LAYOUT.forEach(([shot, cx, cy, fw, ang], i) => {
+      const im = IMG[shot]; if (!im) return;
+      const pw = fw * iw0, ph = pw * im.height / im.width;
+      const bob = Math.sin(t * .6 + i * 1.7) * 6, tilt = Math.sin(t * .4 + i) * .6;
+      g.save(); g.translate(ox + cx * iw0, ry + cy * (h - 2 * ry) + bob); g.rotate((ang + tilt) * Math.PI / 180);
+      g.shadowColor = "rgba(0,0,0,.18)"; g.shadowBlur = 18; g.shadowOffsetY = 6;
+      g.fillStyle = "#fff"; g.fillRect(-pw / 2 - 12, -ph / 2 - 12, pw + 24, ph + 24);
+      g.shadowColor = "transparent"; g.drawImage(im, -pw / 2, -ph / 2, pw, ph); g.restore();
+    });
   } };
-  // slow cross-fading photos with a gentle push-in (redrawn every frame while visible)
-  const HOLD = 2.6, FADE = 1.1, CYCLE = HOLD + FADE;
-  const moving = { kind: "page", live: true, draw: (g, w, h, t = 0) => {
-    const n = imgs.length, k = t / CYCLE, i = Math.floor(k) % n, f = k - Math.floor(k);
-    const shot = (im, local, alpha) => {
-      if (!im) return; const z = 1.06 + .08 * local, kk = Math.max(w / im.width, h / im.height) * z, iw = im.width * kk, ih = im.height * kk;
-      const drift = (local - .5) * 40 * ((i % 2) ? 1 : -1);
-      g.globalAlpha = alpha; g.drawImage(im, (w - iw) / 2 + drift, (h - ih) / 2, iw, ih); g.globalAlpha = 1;
-    };
-    g.fillStyle = "#111"; g.fillRect(0, 0, w, h);
-    const fadeStart = HOLD / CYCLE;
-    shot(imgs[i], f, 1);
-    if (f > fadeStart) shot(imgs[(i + 1) % n], (f - fadeStart) * .3, (f - fadeStart) / (1 - fadeStart));
-    // small counter, like a contact sheet
-    g.fillStyle = "rgba(255,255,255,.85)"; g.font = `500 24px "${FONT}"`; g.direction = "ltr"; g.textAlign = "left";
-    g.fillText(String(i + 1).padStart(2, "0") + " / " + String(n).padStart(2, "0"), RTL ? M : w - M - 120, h - M + 4);
-  } };
-  // leaf = [front, back]; spread k shows [leaf k-1 back, leaf k front]
+  // a blessing page: who it is from, the words, the signature
+  const blessing = (b, onBoard) => ({ kind: "page", draw: (g, w, h) => {
+    if (onBoard) boardPaper(g, w, h); else paper(g, w, h);
+    txt(g, b.label, sx(w), M + 24, 26, 400, GREY);
+    txt(g, b.title, sx(w), M + 190, 92, 600, INK, "start", -2);
+    const n = wrap(g, b.body, sx(w), M + 300, w - 2 * M, 44, 66, 400, "#2c2b28");
+    txt(g, b.sign, sx(w), h - M - 10, 40, 500, INK);
+  } });
+  const [parents, meidan, iyar] = T.bless;
+  // leaf = [front, back]; spread k shows [leaf k-1 back (right), leaf k front (left)]
   return [
-    [{ kind: "front", draw: front, hard: true }, page1],
-    [moving, { kind: "inner", draw: dark }],
+    [{ kind: "front", draw: front, hard: true }, scatter],
+    [blessing(parents), blessing(meidan)],
+    [blessing(iyar), { kind: "inner", draw: dark }],
     [{ kind: "inner", draw: dark, hard: true }, { kind: "back", draw: back, hard: true }],
   ];
 }
@@ -142,7 +150,7 @@ function makeLeaf(f, i, n) {
   for (let c = 0; c < COLS; c++) { const a = c * 2, b = a + 1, d = a + 2, e = a + 3; if (S > 0) idx.push(a, d, b, b, d, e); else idx.push(a, b, d, b, e, d); }
   geo.setIndex(idx); geo.setAttribute("position", new THREE.BufferAttribute(pos, 3)); geo.setAttribute("uv", new THREE.BufferAttribute(uv, 2));
   const tex = (face, mirror) => {
-    const c = document.createElement("canvas"); c.width = face.live ? 768 : TEX_W; c.height = Math.round(c.width * h / w); const g = c.getContext("2d"); if (mirror) { g.translate(c.width, 0); g.scale(-1, 1); }
+    const c = document.createElement("canvas"); c.width = TEX_W; c.height = Math.round(c.width * h / w); const g = c.getContext("2d"); if (mirror) { g.translate(c.width, 0); g.scale(-1, 1); }
     face.draw(g, c.width, c.height, 0);
     const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = renderer.capabilities.getMaxAnisotropy();
     if (face.live) live.push({ face, g, c, t, leaf: i });
@@ -226,7 +234,7 @@ function bar() {
     const d = video.duration || 158.6;
     pa.textContent = fmt(video.currentTime); pb.textContent = fmt(d);
     fill.style.width = clamp(video.currentTime / d) * 100 + "%"; fill.classList.add("thick");
-  } else { pa.textContent = state === 0 ? T.p_front : state === END ? T.p_back : T.p_page; pb.textContent = ""; fill.style.width = state / END * 100 + "%"; fill.classList.remove("thick"); }
+  } else { pa.textContent = state === 0 ? T.p_front : state === END ? T.p_back : "עמוד " + state; pb.textContent = ""; fill.style.width = state / END * 100 + "%"; fill.classList.remove("thick"); }
 }
 let scrub = false;
 const seekAt = (e) => { const r = track.getBoundingClientRect(); const p = clamp((e.clientX - r.left) / r.width); if (state === FILM && video.duration) video.currentTime = p * video.duration; };
