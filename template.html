@@ -58,6 +58,16 @@
   .prog .fill { position: absolute; left: 0; top: 50%; height: 1px; margin-top: 0; background: var(--ink); width: 0; }
   .prog .fill.thick { height: 2px; margin-top: -.5px; }
 
+  /* TV mode: only the book, playing by itself, with a QR to add a wish */
+  .tvqr, .tvstart { display: none; }
+  .tv header, .tv footer, .tv .arrow, .tv .under { display: none !important; }
+  .tv #book { top: 0; bottom: 0; }
+  .tv .tvqr { display: flex; position: fixed; bottom: 32px; inset-inline-start: 32px; z-index: 6; align-items: center; gap: 18px; background: #fff; padding: 16px 22px 16px 16px; box-shadow: 0 10px 40px rgba(0,0,0,.08); }
+  .tv .tvqr img { width: 120px; height: 120px; }
+  .tv .tvqr b { display: block; font-size: 22px; font-weight: 600; }
+  .tv .tvqr span { display: block; font-size: 15px; color: var(--soft); margin-top: 4px; }
+  .tv .tvstart { display: grid; place-items: center; position: fixed; inset: 0; z-index: 9; background: rgba(255,255,255,.55); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); cursor: pointer; border: 0; }
+  .tv .tvstart span { background: var(--ink); color: #fff; padding: 20px 34px; font-size: 22px; font-weight: 500; }
   video#film { position: fixed; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
   video#film:fullscreen { width: 100%; height: 100%; opacity: 1; background: #000; }
 
@@ -79,6 +89,7 @@
   <nav class="tools">
     <button class="b icon" id="mute" aria-label="sound"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M2 6h3l4-3v10l-4-3H2z"/><path id="wave" d="M11.5 5.5a3.5 3.5 0 0 1 0 5"/></svg></button>
     <button class="b icon" id="full" aria-label="{{full}}"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M2 6V2h4M10 2h4v4M14 10v4h-4M6 14H2v-4"/></svg></button>
+    <a class="b" href="{{base}}add/">{{add}}</a>
     <button class="b dark" id="watch"><svg viewBox="0 0 16 16" fill="currentColor"><path d="M4 2.5v11L13 8z"/></svg>{{play}}</button>
   </nav>
 </header>
@@ -102,6 +113,12 @@
   </div>
   <span class="end">{{top}}</span>
 </footer>
+
+<div class="tvqr" aria-hidden="true">
+  <img src="{{base}}qr.svg" alt="">
+  <div><b>{{tv_qr1}}</b><span>{{tv_qr2}}</span></div>
+</div>
+<button class="tvstart" id="tvStart"><span>{{tv_start}}</span></button>
 
 <video id="film" playsinline preload="auto" poster="{{base}}poster.jpg"></video>
 

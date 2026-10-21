@@ -12,7 +12,18 @@ const W = 1, H = 1.38, CW = 1.035, CH = 1.42, GAP = .022;
 const TEX_W = 1024, TEX_H = Math.round(TEX_W * CH / CW);
 const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
 const ease = (x) => x < .5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2;
-const loadImg = (src) => new Promise((r) => { const i = new Image(); i.onload = () => r(i); i.onerror = () => r(null); i.src = src; });
+const loadImg = (src) => new Promise((r) => { const i = new Image(); if (/^https?:/.test(src)) i.crossOrigin = "anonymous"; i.onload = () => r(i); i.onerror = () => r(null); i.src = src; });
+
+// guest wishes (added by anyone through /add) live in Supabase
+const SB = "https://rjtuakbvpfookqutbych.supabase.co", SB_KEY = "sb_publishable_HhbL6xXv99EtHFn00yRfSA_w9mLKOhr";
+async function fetchWishes() {
+  try {
+    const ctl = new AbortController(); setTimeout(() => ctl.abort(), 6000);
+    const r = await fetch(`${SB}/rest/v1/matar_wishes?select=id,name,message,photo_path,created_at&hidden=eq.false&order=created_at.asc`, { headers: { apikey: SB_KEY, Authorization: "Bearer " + SB_KEY }, signal: ctl.signal });
+    return r.ok ? await r.json() : [];
+  } catch (e) { return []; }
+}
+const QR_SRC = (window.BOOK.base || "") + "qr.svg";
 
 function canvasFor(mirror) {
   const c = document.createElement("canvas"); c.width = TEX_W; c.height = TEX_H;
@@ -132,12 +143,51 @@ async function faces() {
     txt(g, T.duo, sx(w), h - 40, 24, 400, GREY);
   } });
   const [parents, meidan, iyar] = T.bless;
+
+  // ---- guest wishes: one page each, then a page inviting more ----
+  const wishes = await fetchWishes();
+  const wishImgs = await Promise.all(wishes.map((w) => w.photo_path ? loadImg(`${SB}/storage/v1/object/public/matar/${w.photo_path}`) : null));
+  const qr = await loadImg(QR_SRC);
+  const wishPage = (wsh, im) => ({ kind: "page", draw: (g, w, h) => {
+    paper(g, w, h);
+    txt(g, T.fromLabel, sx(w), M + 24, 26, 400, GREY);
+    txt(g, wsh.name, sx(w), M + 110, 64, 600, INK, "start", -1);
+    let y = M + 170;
+    if (im) {
+      const bw = w - 2 * M, bh = h * .42, k = Math.min(bw / im.width, bh / im.height), pw = im.width * k, ph = im.height * k;
+      g.save(); g.translate(w / 2, y + bh / 2); g.rotate((RTL ? 1.2 : -1.2) * Math.PI / 180);
+      g.shadowColor = "rgba(0,0,0,.16)"; g.shadowBlur = 16; g.shadowOffsetY = 6; g.fillStyle = "#fff"; g.fillRect(-pw / 2 - 12, -ph / 2 - 12, pw + 24, ph + 24);
+      g.shadowColor = "transparent"; g.drawImage(im, -pw / 2, -ph / 2, pw, ph); g.restore();
+      y += bh + 90;
+    } else y += 60;
+    const size = im ? 36 : 46, lh = size * 1.45, maxLines = Math.floor((h - M - 40 - y) / lh);
+    // keep long wishes on the page
+    g.font = `400 ${size}px "${FONT}"`; const words = wsh.message.replace(/\s+/g, " ").split(" "); const lines = []; let line = "";
+    for (const wd of words) { const t = line ? line + " " + wd : wd; if (g.measureText(t).width > w - 2 * M && line) { lines.push(line); line = wd; } else line = t; }
+    lines.push(line); if (lines.length > maxLines) { lines.length = maxLines; lines[maxLines - 1] += "…"; }
+    lines.forEach((l, i) => txt(g, l, sx(w), y + i * lh, size, 400, "#2c2b28"));
+  } });
+  const invite = { kind: "invite", draw: (g, w, h) => {
+    paper(g, w, h);
+    txt(g, T.inviteLabel, sx(w), M + 24, 26, 400, GREY);
+    txt(g, T.invite1, sx(w), h * .30, 84, 600, INK, "start", -2);
+    txt(g, T.invite2, sx(w), h * .30 + 100, 84, 600, INK, "start", -2);
+    if (qr) { const q = w * .42; g.fillStyle = "#fff"; g.fillRect((w - q) / 2 - 24, h * .46 - 24, q + 48, q + 48); g.drawImage(qr, (w - q) / 2, h * .46, q, q); }
+    txt(g, T.inviteUrl, w / 2, h * .46 + w * .42 + 90, 30, 500, INK, "center");
+  } };
+  const endPage = { kind: "page", draw: (g, w, h) => { paper(g, w, h); txt(g, T.credit, w / 2, h / 2, 30, 400, GREY, "center"); } };
+  const after = [...wishes.map((wsh, i) => wishPage(wsh, wishImgs[i])), invite];
+  const rest = after.slice(1); if (rest.length % 2) rest.push(endPage);
+  const pairs = []; for (let i = 0; i < rest.length; i += 2) pairs.push([rest[i], rest[i + 1]]);
+
   // leaf = [front, back]; spread k shows [leaf k-1 back (right), leaf k front (left)]
   return [
     [{ kind: "front", draw: front, hard: true }, scatter],
     [blessing(parents), blessing(meidan)],
     [blessing(iyar), duoPage(DUO.slice(0, 9), 1)],
     [duoPage(DUO.slice(9), 2), { kind: "inner", draw: dark }],
+    [{ kind: "inner", draw: dark, film: true }, after[0]],     // FILM: the video spans this spread
+    ...pairs,
     [{ kind: "inner", draw: dark, hard: true }, { kind: "back", draw: back, hard: true }],
   ];
 }
@@ -239,6 +289,27 @@ function go(s, opts = {}) {
   else video.pause();
 }
 window.bookGo = go;
+// ---------- TV mode (?tv): plays the book by itself in a loop, with a QR to add a wish ----------
+const TV = new URLSearchParams(location.search).has("tv");
+let WISHES = 0;
+async function tvLoop() {
+  // new wishes arrived? reload the book so they become pages
+  const n = (await fetchWishes()).length;
+  if (n + 0 !== countWishes) return location.reload();
+  go(0);
+}
+let countWishes = -1, tvOn = false;
+if (TV) {
+  document.body.classList.add("tv");
+  fetchWishes().then((w) => { countWishes = w.length; });
+  const start = $("tvStart");
+  start.addEventListener("click", () => {
+    start.remove(); tvOn = true;
+    const el = document.documentElement; try { (el.requestFullscreen || el.webkitRequestFullscreen).call(el); } catch (e) {}
+    video.muted = false; video.play().then(() => video.pause()).catch(() => {});   // unlock sound for later
+    go(1);
+  });
+}
 // turn the pages by themselves once the book is open, until the video; any manual move restarts the wait
 const AUTO = 7;
 let autoT = 0;
@@ -253,7 +324,7 @@ $("watch").onclick = () => go(FILM, { restart: state !== FILM });
 $("full").onclick = () => { const el = document.documentElement; if (document.fullscreenElement || document.webkitFullscreenElement) { (document.exitFullscreen || document.webkitExitFullscreen).call(document); } else if (el.requestFullscreen) el.requestFullscreen(); else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen(); };
 const wave = $("wave");
 $("mute").onclick = () => { video.muted = !video.muted; wave.style.opacity = video.muted ? 0 : 1; };
-video.addEventListener("ended", () => setTimeout(() => go(END), 700));
+video.addEventListener("ended", () => setTimeout(() => { if (state === FILM) go(FILM + 1); }, 700));
 
 // status bar line: film time when open, place in the book otherwise
 const fmt = (s) => { s = Math.max(0, Math.floor(s || 0)); return Math.floor(s / 60) + ":" + String(s % 60).padStart(2, "0"); };
@@ -310,7 +381,8 @@ function fit() {
   if (renderer.domElement.width !== Math.floor(w * pr) || renderer.domElement.height !== Math.floor(h * pr)) renderer.setSize(w, h);
   camera.aspect = w / h; camera.updateProjectionMatrix();
   const open = state > 0 && state < END, f = Math.tan(camera.fov * Math.PI / 360);
-  const needW = open ? 2 * CW * 1.16 : CW * 1.75, needH = CH * (open ? 1.18 : 1.3);
+  const tvK = TV ? 1.22 : 1;
+  const needW = (open ? 2 * CW * 1.16 : CW * 1.75) * tvK, needH = CH * (open ? 1.18 : 1.3) * tvK;
   return Math.max(needH / 2 / f, needW / 2 / (f * camera.aspect));
 }
 const clock = new THREE.Clock(), goal = new THREE.Vector3();
@@ -342,7 +414,10 @@ function frame() {
   stage.rotation.x = look.y * .03 * calm;
   goal.set(0, 0, fit()); camera.position.lerp(goal, Math.min(1, dt * 3)); camera.lookAt(0, 0, 0);
   for (const L of live) { const lf = leaves[L.leaf]; if (Math.abs(L.leaf - state) <= 1 || (lf.p > 0 && lf.p < 1)) { L.face.draw(L.g, L.c.width, L.c.height, clock.elapsedTime); L.t.needsUpdate = true; } }
-  if (state > 0 && state < FILM && leaves.every((L) => L.p === 0 || L.p === 1)) { autoT += dt; if (autoT > AUTO) { autoT = 0; go(state + 1); } } else autoT = 0;
+  const still = leaves.every((L) => L.p === 0 || L.p === 1);
+  if (still && state > 0 && state !== FILM && state < END) { autoT += dt; if (autoT > AUTO) { autoT = 0; go(state + 1); } }
+  else if (still && TV && tvOn && (state === END || state === 0)) { autoT += dt; if (autoT > (state === END ? 12 : 4)) { autoT = 0; if (state === END) tvLoop(); else go(1); } }
+  else autoT = 0;
   if (!scrub) bar();
   renderer.render(scene, camera);
   requestAnimationFrame(frame);
@@ -350,7 +425,7 @@ function frame() {
 
 (async () => {
   await Promise.race([new Promise((r) => setTimeout(r, 2500)), Promise.all([document.fonts.load(`500 100px "${FONT}"`, "מטר Matar"), document.fonts.load(`400 30px "${FONT}"`, "מטר Matar")]).catch(() => {})]);
-  const F = await faces(); F.forEach((f, i) => leaves.push(makeLeaf(f, i, F.length))); END = F.length; FILM = END - 1;
+  const F = await faces(); F.forEach((f, i) => leaves.push(makeLeaf(f, i, F.length))); END = F.length; FILM = F.findIndex((f) => f[0].film); WISHES = F.length;
   go(0); camera.position.set(0, 0, fit() * 1.3);
   body.classList.add("ready");
   frame();

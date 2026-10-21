@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>ברכה למטר</title>
+<meta name="description" content="הוסיפו ברכה ותמונה לספר הבר מצווה של מטר">
+<meta property="og:title" content="ברכה למטר">
+<meta property="og:description" content="הוסיפו ברכה ותמונה לספר הבר מצווה של מטר">
+<meta property="og:image" content="../poster.jpg">
+<meta name="theme-color" content="#FFCF1A">
+<style>
+  @font-face { font-family: "Swiss"; font-weight: 400; src: url(../fonts/plex-hebrew-400.woff2) format("woff2"); unicode-range: U+0590-05FF, U+200C-2010, U+20AA, U+25CC, U+FB1D-FB4F; }
+  @font-face { font-family: "Swiss"; font-weight: 500; src: url(../fonts/plex-hebrew-500.woff2) format("woff2"); unicode-range: U+0590-05FF, U+200C-2010, U+20AA, U+25CC, U+FB1D-FB4F; }
+  @font-face { font-family: "Swiss"; font-weight: 600; src: url(../fonts/plex-hebrew-600.woff2) format("woff2"); unicode-range: U+0590-05FF, U+200C-2010, U+20AA, U+25CC, U+FB1D-FB4F; }
+  @font-face { font-family: "Swiss"; font-weight: 400; src: url(../fonts/plex-latin-400.woff2) format("woff2"); unicode-range: U+0000-00FF, U+2000-206F; }
+  @font-face { font-family: "Swiss"; font-weight: 500; src: url(../fonts/plex-latin-500.woff2) format("woff2"); unicode-range: U+0000-00FF, U+2000-206F; }
+  :root { --y: #FFCF1A; --ink: #16140f; --soft: #77736a; --line: #e6e2d8; --ease: cubic-bezier(.22, 1, .36, 1); }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { background: #fff; }
+  body { font-family: "Swiss", system-ui, sans-serif; color: var(--ink); -webkit-font-smoothing: antialiased; min-height: 100svh; display: flex; flex-direction: column; }
+  button, input, textarea { font: inherit; color: inherit; }
+
+  .cover { background: var(--y); padding: 28px 22px 34px; }
+  .cover small { font-size: 14px; opacity: .65; }
+  .cover h1 { font-weight: 600; font-size: clamp(44px, 12vw, 64px); line-height: 1; letter-spacing: -.02em; margin-top: 18px; }
+  .cover p { margin-top: 14px; font-size: 17px; line-height: 1.5; max-width: 30em; }
+
+  form { width: min(560px, 100%); margin: 0 auto; padding: 26px 22px 40px; display: grid; gap: 22px; flex: 1; }
+  label { display: grid; gap: 8px; font-size: 14px; color: var(--soft); }
+  input[type=text], textarea { width: 100%; border: 1px solid var(--line); background: #fff; padding: 14px 14px; font-size: 18px; color: var(--ink); border-radius: 0; outline: none; transition: border-color .2s; -webkit-appearance: none; }
+  input[type=text]:focus, textarea:focus { border-color: var(--ink); }
+  textarea { min-height: 170px; resize: vertical; line-height: 1.5; }
+  .count { font-size: 12px; text-align: left; direction: ltr; }
+
+  .photo { position: relative; border: 1px dashed #cfc9bb; min-height: 150px; display: grid; place-items: center; text-align: center; cursor: pointer; overflow: hidden; transition: border-color .2s; }
+  .photo:hover { border-color: var(--ink); }
+  .photo input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+  .photo .empty { padding: 26px; font-size: 16px; color: var(--ink); }
+  .photo .empty span { display: block; font-size: 13px; color: var(--soft); margin-top: 6px; }
+  .photo img { display: none; max-width: 100%; max-height: 360px; }
+  .photo.has img { display: block; } .photo.has .empty { display: none; }
+  .photo .clear { position: absolute; top: 8px; left: 8px; background: #fff; border: 1px solid var(--line); width: 32px; height: 32px; display: none; z-index: 2; cursor: pointer; }
+  .photo.has .clear { display: block; }
+
+  .send { height: 56px; background: var(--ink); color: #fff; border: 0; font-size: 18px; font-weight: 500; cursor: pointer; transition: opacity .2s; }
+  .send[disabled] { opacity: .45; cursor: default; }
+  .err { color: #b3261e; font-size: 14px; min-height: 1em; }
+
+  .done { display: none; flex: 1; place-items: center; text-align: center; padding: 40px 22px; }
+  .done h2 { font-size: 40px; font-weight: 600; letter-spacing: -.02em; }
+  .done p { margin-top: 12px; font-size: 17px; color: var(--soft); }
+  .done a { display: inline-block; margin-top: 28px; padding: 14px 22px; border: 1px solid var(--ink); text-decoration: none; color: var(--ink); }
+  .sent form { display: none; } .sent .done { display: grid; }
+  footer { text-align: center; font-size: 13px; color: var(--soft); padding: 18px; }
+  footer a { color: inherit; }
+</style>
+</head>
+<body>
+<header class="cover">
+  <small>בר מצווה</small>
+  <h1>ברכה<br>למטר.</h1>
+  <p>כתבו כמה מילים והוסיפו תמונה. הברכה תיכנס לספר הדיגיטלי של מטר.</p>
+</header>
+
+<form id="f" novalidate>
+  <label>השם שלכם
+    <input type="text" id="name" maxlength="60" autocomplete="name" placeholder="למשל: סבתא רינה" required>
+  </label>
+  <label>הברכה
+    <textarea id="msg" maxlength="700" placeholder="מטר יקר," required></textarea>
+    <span class="count" id="count">0 / 700</span>
+  </label>
+  <div>
+    <label style="margin-bottom:8px">תמונה (לא חובה)</label>
+    <div class="photo" id="drop">
+      <input type="file" id="file" accept="image/*">
+      <div class="empty">בחרו תמונה<span>מהגלריה או מהמצלמה</span></div>
+      <img id="preview" alt="">
+      <button type="button" class="clear" id="clear" aria-label="הסרת תמונה">✕</button>
+    </div>
+  </div>
+  <p class="err" id="err"></p>
+  <button class="send" id="send" type="submit">שליחת הברכה</button>
+</form>
+
+<section class="done">
+  <div>
+    <h2>תודה!</h2>
+    <p>הברכה שלכם נכנסה לספר של מטר.</p>
+    <a href="../">לספר</a>
+  </div>
+</section>
+
+<footer><a href="../">מטר · בר מצווה</a></footer>
+
+<script>
+(() => {
+  const SB = "https://rjtuakbvpfookqutbych.supabase.co", KEY = "sb_publishable_HhbL6xXv99EtHFn00yRfSA_w9mLKOhr";
+  const H = { apikey: KEY, Authorization: "Bearer " + KEY };
+  const $ = (id) => document.getElementById(id);
+  const msg = $("msg"), count = $("count"), file = $("file"), drop = $("drop"), preview = $("preview"), err = $("err"), send = $("send");
+  let blob = null;
+
+  msg.addEventListener("input", () => { count.textContent = msg.value.length + " / 700"; });
+
+  // shrink the photo on the phone before upload (max 1600px, jpeg)
+  async function shrink(f) {
+    const url = URL.createObjectURL(f);
+    const img = await new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = rej; i.src = url; });
+    const k = Math.min(1, 1600 / Math.max(img.naturalWidth, img.naturalHeight));
+    const c = document.createElement("canvas"); c.width = Math.round(img.naturalWidth * k); c.height = Math.round(img.naturalHeight * k);
+    c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
+    URL.revokeObjectURL(url);
+    return await new Promise((res) => c.toBlob(res, "image/jpeg", .86));
+  }
+  file.addEventListener("change", async () => {
+    err.textContent = ""; const f = file.files[0]; if (!f) return;
+    try { blob = await shrink(f); preview.src = URL.createObjectURL(blob); drop.classList.add("has"); }
+    catch (e) { err.textContent = "לא הצלחנו לפתוח את התמונה. נסו תמונה אחרת."; blob = null; }
+  });
+  $("clear").addEventListener("click", (e) => { e.preventDefault(); e.stopPropagation(); blob = null; file.value = ""; drop.classList.remove("has"); });
+
+  $("f").addEventListener("submit", async (e) => {
+    e.preventDefault(); err.textContent = "";
+    const name = $("name").value.trim(), message = msg.value.trim();
+    if (!name) return err.textContent = "כתבו את השם שלכם.";
+    if (!message) return err.textContent = "כתבו ברכה.";
+    send.disabled = true; send.textContent = "שולחים…";
+    try {
+      let photo_path = null;
+      if (blob) {
+        photo_path = "wishes/" + crypto.randomUUID() + ".jpg";
+        const up = await fetch(`${SB}/storage/v1/object/matar/${photo_path}`, { method: "POST", headers: { ...H, "Content-Type": "image/jpeg" }, body: blob });
+        if (!up.ok) throw new Error("upload " + up.status);
+      }
+      const r = await fetch(`${SB}/rest/v1/matar_wishes`, { method: "POST", headers: { ...H, "Content-Type": "application/json", Prefer: "return=minimal" }, body: JSON.stringify({ name, message, photo_path }) });
+      if (!r.ok) throw new Error("insert " + r.status);
+      document.body.classList.add("sent"); scrollTo(0, 0);
+    } catch (e2) {
+      err.textContent = "משהו לא עבד. נסו שוב בעוד רגע."; send.disabled = false; send.textContent = "שליחת הברכה";
+    }
+  });
+})();
+</script>
+</body>
+</html>
