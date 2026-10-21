@@ -56,7 +56,7 @@ async function faces() {
     txt(g, T.name + ",", sx(w), M + 110 + ts, ts, 500, INKL, "start", -ts / 50);
     txt(g, T.sub + ".", sx(w), M + 110 + ts * 2, ts, 500, INKL, "start", -ts / 50);
     const cols = 3, gap = 12, gw = w - 2 * M, cw = (gw - gap * (cols - 1)) / cols, ch = cw * 9 / 16, y0 = h - M - 120 - 2 * ch - gap;
-    imgs.forEach((im, i) => {
+    [6, 18, 58, 86, 114, 146].map((k) => IMG[k]).forEach((im, i) => {
       if (!im) return; const c = i % cols, r = Math.floor(i / cols);
       const x = RTL ? w - M - (c + 1) * cw - c * gap : M + c * (cw + gap), y = y0 + r * (ch + gap);
       const k = Math.max(cw / im.width, ch / im.height);
@@ -115,14 +115,14 @@ const host = $("book");
 const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
 renderer.setPixelRatio(Math.min(2, devicePixelRatio));
 renderer.outputColorSpace = THREE.SRGBColorSpace;
-renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.VSMShadowMap;
+renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 host.appendChild(renderer.domElement);
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(28, 1, .1, 50);
 scene.add(new THREE.HemisphereLight(0xffffff, 0xe8e8e8, 1.9));
 const sun = new THREE.DirectionalLight(0xffffff, 1.4);
 sun.position.set(-1.6, 2.2, 3.2); sun.castShadow = true;
-sun.shadow.mapSize.set(1024, 1024); sun.shadow.radius = 14; sun.shadow.blurSamples = 20; sun.shadow.bias = -.0005;
+sun.shadow.mapSize.set(2048, 2048); sun.shadow.bias = -.0005;
 Object.assign(sun.shadow.camera, { left: -3, right: 3, top: 3, bottom: -3, near: .5, far: 10 });
 scene.add(sun);
 

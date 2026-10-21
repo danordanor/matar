@@ -23,6 +23,8 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 html = open(os.path.join(HERE, "template.html"), encoding="utf-8").read()
 b = dict(L["book"]); b.update(dir=L["dir"], base=L["base"])
 for k in KEYS: html = html.replace("{{" + k + "}}", L[k])
+import time; V = str(int(time.time()))
+html = html.replace("book.js\"", "book.js?v=" + V + "\"")
 html = html.replace("{{book_json}}", json.dumps(b, ensure_ascii=False))
 assert "{{" not in html, html[html.index("{{"):html.index("{{") + 40]
 open(os.path.join(HERE, L["out"]), "w", encoding="utf-8").write(html); print("wrote index.html")
