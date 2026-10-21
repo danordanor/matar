@@ -3,95 +3,59 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>מטר · 13</title>
+<title>מטר</title>
 <meta name="description" content="תראו אותו גדל.">
-<meta property="og:title" content="מטר · 13">
+<meta property="og:title" content="מטר">
 <meta property="og:description" content="תראו אותו גדל.">
 <meta property="og:image" content="poster.jpg">
-<meta name="theme-color" content="#000000">
+<meta name="theme-color" content="#ebe6dc">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@300;400&family=Heebo:wght@300;400&family=Inter:wght@300;400&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@700&text=%E3%83%9E%E3%82%BF%E3%83%AB&display=swap" rel="stylesheet">
 <style>
-  :root {
-    --paper: #f3efe7;
-    --ink: #151412;
-    --soft: #6f6a62;
-    --hair: rgba(21, 20, 18, .14);
-    --light: #f4f1ea;
-    --ease: cubic-bezier(.22, 1, .36, 1);
-    --pad: clamp(20px, 3.2vw, 44px);
-    --serif: "Frank Ruhl Libre", serif;
-    --sans: "Heebo", "Inter", system-ui, sans-serif;
-  }
+  @font-face { font-family: "Bellefair"; src: url(fonts/bellefair-hebrew-400-normal.woff2) format("woff2"); unicode-range: U+0590-05FF, U+200C-2010, U+20AA, U+25CC, U+FB1D-FB4F; font-display: swap; }
+  @font-face { font-family: "Bellefair"; src: url(fonts/bellefair-latin-400-normal.woff2) format("woff2"); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+2074, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; font-display: swap; }
+  @font-face { font-family: "Inter"; font-weight: 300; src: url(fonts/inter-latin-300-normal.woff2) format("woff2"); font-display: swap; }
+  @font-face { font-family: "Inter"; font-weight: 400; src: url(fonts/inter-latin-400-normal.woff2) format("woff2"); font-display: swap; }
+</style>
+<style>
+  :root { --bg: #ebe6dc; --ink: #1b1a17; --soft: #8a8378; --light: #f4f1ea; --ease: cubic-bezier(.22, 1, .36, 1); --pad: clamp(18px, 3vw, 40px); }
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  html { background: var(--paper); scroll-behavior: smooth; }
-  body { font-family: var(--sans); color: var(--ink); background: var(--paper); -webkit-font-smoothing: antialiased; -webkit-tap-highlight-color: transparent; }
-  body.locked { overflow: hidden; }
-  img { display: block; max-width: 100%; }
+  html, body { height: 100%; overflow: hidden; }
+  body { background: radial-gradient(ellipse at 50% 40%, #f4f0e8 0%, var(--bg) 60%, #ded7ca 100%); color: var(--ink); font-family: "Inter", system-ui, sans-serif; -webkit-font-smoothing: antialiased; -webkit-tap-highlight-color: transparent; }
   button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; }
 
-  /* shared play affordance: a line, a word, a line */
-  .play { display: inline-flex; align-items: center; gap: 14px; font: 400 11px/1 "Inter", sans-serif; letter-spacing: .38em; text-transform: uppercase; direction: ltr; }
-  .play i { display: block; width: 36px; height: 1px; background: currentColor; transition: width .6s var(--ease); }
-  .play:hover i { width: 60px; }
+  #book { position: fixed; inset: 0; opacity: 0; transition: opacity 1.6s var(--ease); }
+  .ready #book { opacity: 1; }
+  #book canvas { display: block; touch-action: pan-y; }
 
-  /* reveal on scroll */
-  .rv { opacity: 0; transform: translateY(24px); transition: opacity 1.2s var(--ease), transform 1.2s var(--ease); }
-  .rv.in { opacity: 1; transform: none; }
-  .d1 { transition-delay: .12s; } .d2 { transition-delay: .24s; } .d3 { transition-delay: .36s; }
+  /* postcard frame: a hairline border with the labels sitting on it */
+  .frame { position: fixed; inset: var(--pad); border: 1px solid rgba(27,26,23,.12); pointer-events: none; }
+  .label { position: fixed; top: calc(var(--pad) + 22px); left: 50%; transform: translateX(-50%); font-family: "Bellefair", serif; font-size: 18px; letter-spacing: .04em; white-space: nowrap; }
+  .lang { position: fixed; top: calc(var(--pad) + 14px); inset-inline-end: calc(var(--pad) + 16px); font-size: 12px; letter-spacing: .14em; color: var(--soft); text-decoration: none; transition: color .3s; }
+  .lang:hover { color: var(--ink); }
 
-  /* ---------- intro + player card ---------- */
-  .intro { padding: clamp(64px, 10vw, 120px) 0 clamp(40px, 6vw, 80px); text-align: center; }
-  .intro h1 { font-family: var(--serif); font-weight: 300; font-size: clamp(96px, 16vw, 220px); line-height: .9; }
-  .intro .tag { margin-top: 14px; font-family: var(--serif); font-weight: 300; font-size: clamp(22px, 2.4vw, 32px); color: var(--soft); }
-  .card { position: relative; display: block; width: 100%; margin-top: clamp(40px, 6vw, 72px); aspect-ratio: 16 / 9; overflow: hidden; background: #000; border-radius: 4px; }
-  .card img { width: 100%; height: 100%; object-fit: cover; transition: transform 1.6s var(--ease), filter 1.2s var(--ease); filter: brightness(.82); }
-  .card:hover img { transform: scale(1.025); filter: brightness(.7); }
-  .pbtn { position: absolute; left: 50%; top: 50%; width: clamp(72px, 8vw, 104px); aspect-ratio: 1; transform: translate(-50%, -50%); border-radius: 50%; border: 1px solid rgba(255,255,255,.85); background: rgba(255,255,255,.08); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); transition: transform .6s var(--ease), background .6s var(--ease); }
-  .pbtn::after { content: ""; position: absolute; left: 50%; top: 50%; margin: -11px 0 0 -6px; border-style: solid; border-width: 11px 0 11px 18px; border-color: transparent transparent transparent #fff; }
-  .card:hover .pbtn { transform: translate(-50%, -50%) scale(1.08); background: rgba(255,255,255,.18); }
-  .len { position: absolute; left: 20px; bottom: 16px; color: #fff; font: 300 13px/1 "Inter", sans-serif; letter-spacing: .08em; }
+  .nav { position: fixed; left: 50%; bottom: calc(var(--pad) + 14px); transform: translateX(-50%); display: flex; align-items: center; gap: 18px; direction: ltr; white-space: nowrap; }
+  .nav button { width: 34px; height: 34px; position: relative; }
+  .nav button::before { content: ""; position: absolute; top: 50%; left: 50%; width: 9px; height: 9px; border-top: 1px solid var(--ink); border-left: 1px solid var(--ink); }
+  .nav .prev::before { transform: translate(-30%, -50%) rotate(-45deg); }
+  .nav .next::before { transform: translate(-70%, -50%) rotate(135deg); }
+  .nav .count { font-size: 12px; letter-spacing: .14em; font-variant-numeric: tabular-nums; min-width: 4.5em; text-align: center; color: var(--soft); }
+  .nav .film { white-space: nowrap; display: inline-flex; align-items: center; gap: 10px; font-family: "Bellefair", serif; font-size: 17px; padding-inline-start: 18px; border-inline-start: 1px solid rgba(27,26,23,.15); }
+  .nav .film::before { content: ""; width: 0; height: 0; border-style: solid; border-width: 5px 0 5px 8px; border-color: transparent transparent transparent var(--ink); }
 
-  /* ---------- sections ---------- */
-  .wrap { width: min(1180px, 100% - 2 * var(--pad)); margin-inline: auto; }
-  section.block { padding: clamp(96px, 14vw, 180px) 0; }
-  .kicker { font-size: 14px; letter-spacing: .02em; color: var(--soft); font-weight: 300; }
-  .rule { height: 1px; background: var(--hair); transform-origin: right; transform: scaleX(0); transition: transform 1.6s var(--ease); }
-  .rule.in { transform: scaleX(1); }
+  .hint { position: fixed; left: 50%; bottom: calc(var(--pad) + 66px); white-space: nowrap; transform: translateX(-50%); font-family: "Bellefair", serif; font-size: 17px; color: var(--soft); transition: opacity .8s var(--ease); animation: pulse 2.8s ease-in-out infinite; }
+  .hint.off { opacity: 0; animation: none; }
+  @keyframes pulse { 50% { opacity: .45; } }
 
-  .statement h2, .closing h2 { text-wrap: balance; }
-  .statement h2 { font-family: var(--serif); font-weight: 300; font-size: clamp(44px, 7.4vw, 108px); line-height: 1.02; letter-spacing: -.01em; margin-top: 28px; }
-  .statement h2 em { font-style: normal; color: var(--soft); }
-  .statement p { margin-top: 40px; max-width: 34em; font-size: clamp(17px, 1.5vw, 20px); line-height: 1.75; font-weight: 300; color: #3b3832; }
-
-  /* film strip */
-  .strip { overflow: hidden; padding: 8px 0 0; direction: ltr; }
-  .strip .row { display: flex; gap: clamp(10px, 1.2vw, 16px); width: max-content; animation: drift 70s linear infinite; }
-  .strip:hover .row { animation-play-state: paused; }
-  .strip figure { width: clamp(220px, 26vw, 360px); aspect-ratio: 16 / 9; overflow: hidden; background: #ddd8cd; border-radius: 2px; }
-  .strip img { width: 100%; height: 100%; object-fit: cover; filter: saturate(.9); transition: transform 1.2s var(--ease), filter 1.2s var(--ease); }
-  .strip figure:hover img { transform: scale(1.04); filter: saturate(1.05); }
-  @keyframes drift { to { transform: translateX(-50%); } }
-
-  /* closing */
-  .closing { text-align: center; padding-top: clamp(40px, 6vw, 80px); }
-  .closing h2 { font-family: var(--serif); font-weight: 300; font-size: clamp(56px, 10vw, 150px); line-height: 1; }
-  .closing .play { margin-top: 36px; }
-  footer { padding: 36px 0 calc(36px + env(safe-area-inset-bottom)); font-size: 13px; color: var(--soft); font-weight: 300; }
-  footer .wrap { text-align: center; }
-
-
-
-  /* ---------- player overlay ---------- */
+  /* ---------- film player ---------- */
   .player { position: fixed; inset: 0; z-index: 50; background: #000; color: var(--light); opacity: 0; visibility: hidden; transition: opacity .8s var(--ease), visibility 0s linear .8s; cursor: pointer; }
   .player.open { opacity: 1; visibility: visible; transition: opacity .8s var(--ease); }
   .player video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; background: #000; }
   .ui { position: absolute; inset: 0; pointer-events: none; transition: opacity .7s var(--ease); }
   .player.idle .ui { opacity: 0; } .player.idle { cursor: none; }
-
   .bar { position: absolute; direction: ltr; left: var(--pad); right: var(--pad); bottom: calc(var(--pad) + env(safe-area-inset-bottom)); display: flex; align-items: center; gap: 18px; pointer-events: auto; }
-  .time { font: 300 13px/1 "Inter", sans-serif; letter-spacing: .08em; font-variant-numeric: tabular-nums; min-width: 3.4em; text-shadow: 0 0 12px rgba(0,0,0,.6); }
+  .time { font: 300 13px/1 "Inter", sans-serif; letter-spacing: .08em; font-variant-numeric: tabular-nums; min-width: 3.4em; }
   .time.end { text-align: right; }
   .track { position: relative; flex: 1; height: 28px; cursor: pointer; }
   .line, .fill, .buffer { position: absolute; left: 0; top: 50%; height: 1px; margin-top: -.5px; }
@@ -102,10 +66,7 @@
   .fill { background: var(--light); width: 0; }
   .knob { position: absolute; top: 50%; left: 0; width: 7px; height: 7px; margin: -3.5px 0 0 -3.5px; border-radius: 50%; background: var(--light); transform: scale(0); transition: transform .35s var(--ease); }
   .track:hover .knob, .scrubbing .knob { transform: scale(1); }
-  .peek { position: absolute; bottom: 22px; left: 0; transform: translateX(-50%); font: 300 11px/1 "Inter", sans-serif; font-variant-numeric: tabular-nums; opacity: 0; transition: opacity .25s; }
-  .track:hover .peek { opacity: .8; }
-
-  .vol { position: absolute; direction: ltr; right: var(--pad); top: calc(var(--pad) + env(safe-area-inset-top)); bottom: calc(var(--pad) * 2 + 28px + env(safe-area-inset-bottom)); width: 28px; margin-right: -14px; display: flex; flex-direction: column; align-items: center; gap: 14px; pointer-events: auto; }
+  .vol { position: absolute; direction: ltr; right: var(--pad); top: calc(var(--pad) + env(safe-area-inset-top)); bottom: calc(var(--pad) * 2 + 28px); width: 28px; margin-right: -14px; display: flex; flex-direction: column; align-items: center; gap: 14px; pointer-events: auto; }
   .vtrack { position: relative; flex: 1; width: 100%; cursor: pointer; }
   .vline, .vfill { position: absolute; left: 50%; width: 1px; margin-left: -.5px; bottom: 0; }
   .vline { top: 0; background: rgba(244,241,234,.28); transform: scaleY(0); }
@@ -113,153 +74,87 @@
   @keyframes spanY { to { transform: scaleY(1); } }
   .vfill { background: var(--light); height: 100%; transition: height .15s linear; }
   .vlabel { font: 300 10px/1 "Inter", sans-serif; letter-spacing: .3em; opacity: .7; writing-mode: vertical-rl; transform: rotate(180deg); cursor: pointer; user-select: none; }
-
   .close { position: absolute; top: calc(var(--pad) + env(safe-area-inset-top)); left: var(--pad); width: 28px; height: 28px; pointer-events: auto; }
   .close::before, .close::after { content: ""; position: absolute; left: 4px; right: 4px; top: 50%; height: 1px; background: var(--light); transform: rotate(45deg); transition: transform .5s var(--ease); }
   .close::after { transform: rotate(-45deg); }
   .close:hover::before { transform: rotate(135deg); } .close:hover::after { transform: rotate(45deg); }
-
-  .glyph { position: absolute; left: 50%; top: 50%; width: 64px; height: 64px; margin: -32px 0 0 -32px; pointer-events: none; opacity: 0; transform: scale(.8); transition: opacity .5s var(--ease), transform .5s var(--ease); }
-  .player.paused .glyph { opacity: .9; transform: none; }
-  .glyph { border-radius: 50%; border: 1px solid rgba(255,255,255,.85); width: 96px; height: 96px; margin: -48px 0 0 -48px; }
+  .glyph { position: absolute; left: 50%; top: 50%; width: 96px; height: 96px; margin: -48px 0 0 -48px; border-radius: 50%; border: 1px solid rgba(255,255,255,.85); pointer-events: none; opacity: 0; transform: scale(.8); transition: opacity .5s var(--ease), transform .5s var(--ease); }
   .glyph::after { content: ""; position: absolute; left: 50%; top: 50%; margin: -11px 0 0 -6px; border-style: solid; border-width: 11px 0 11px 18px; border-color: transparent transparent transparent #fff; }
-
+  .player.paused .glyph { opacity: .9; transform: none; }
   .outro { position: absolute; inset: 0; display: grid; place-items: center; text-align: center; background: rgba(0,0,0,.72); opacity: 0; visibility: hidden; transition: opacity 1.4s var(--ease), visibility 0s linear 1.4s; }
   .player.ended .outro { opacity: 1; visibility: visible; transition: opacity 1.4s var(--ease); }
-  .outro h2 { font-family: var(--serif); font-weight: 300; font-size: clamp(64px, 11vw, 160px); line-height: 1; }
+  .outro h2 { font-family: "Bellefair", serif; font-weight: 400; font-size: clamp(64px, 11vw, 160px); line-height: 1; }
   .outro .row { margin-top: 30px; display: flex; gap: 40px; justify-content: center; }
+  .outro .row button { font-family: "Bellefair", serif; font-size: 20px; border-bottom: 1px solid currentColor; padding-bottom: 4px; }
 
-  @media (max-width: 600px) { .vol { display: none; } .bar { gap: 12px; } }
+  @media (max-width: 600px) { .vol { display: none; } .bar { gap: 12px; } .nav .film span { display: none; } }
   @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: .01s !important; transition-duration: .01s !important; } }
 </style>
 </head>
 <body>
+<div id="book" aria-label="מטר"></div>
+<div class="frame" aria-hidden="true"></div>
+<div class="label">מטר · בר מצווה</div>
+<a class="lang" href="en/">English</a>
+<p class="hint" id="hint">לחצו על הכריכה כדי לפתוח</p>
+<nav class="nav">
+  <button class="prev" aria-label="prev" onclick="document.dir==='rtl'?bookNext():bookPrev()"></button>
+  <span class="count" id="count">0 / 9</span>
+  <button class="next" aria-label="next" onclick="document.dir==='rtl'?bookPrev():bookNext()"></button>
+  <button class="film" onclick="openFilm()"><span>לצפייה בסרט</span></button>
+</nav>
 
-<main>
-  <section class="intro">
-    <div class="wrap">
-      <h1 class="rv">מטר</h1>
-      <p class="tag rv d1">תראו אותו גדל.</p>
-      <button class="card rv d2" data-play aria-label="נגן את הסרטון">
-        <img src="poster.jpg" alt="">
-        <span class="pbtn" aria-hidden="true"></span>
-        <span class="len" dir="ltr">2:38</span>
-      </button>
-    </div>
-  </section>
-
-  <section class="block statement">
-    <div class="wrap">
-      <div class="rule rv"></div>
-      <h2 class="rv d1">שלוש עשרה שנים.<br><em>סרטון אחד.</em></h2>
-      <p class="rv d2">מהבטן של אמא, דרך המגבת האדומה, הבריכות, הנחלים והטרמפולינות, ועד היום שבו הוא עולה לתורה. כל התמונות שצילמנו, חוזרות לחיים ברצף אחד.</p>
-    </div>
-  </section>
-
-  <div class="strip" aria-label="רגעים מהסרטון">
-    <div class="row" id="row"></div>
-  </div>
-
-  <section class="block closing">
-    <div class="wrap">
-      <h2 class="rv">מזל טוב, מטר</h2>
-      <button class="play rv d1" data-play><i></i>Play<i></i></button>
-    </div>
-  </section>
-</main>
-
-<footer>
-  <div class="wrap"><span>באהבה, אמא, אבא, מידן ואייר</span></div>
-</footer>
-
-<!-- player -->
 <div class="player" id="player" aria-hidden="true">
   <video id="v" playsinline preload="none" poster="poster.jpg"></video>
   <div class="glyph" aria-hidden="true"></div>
   <div class="ui">
     <button class="close" id="close" aria-label="סגירה"></button>
-    <div class="vol">
-      <div class="vtrack" id="vtrack"><div class="vline"></div><div class="vfill" id="vfill"></div></div>
-      <div class="vlabel" id="mute">VOL</div>
-    </div>
+    <div class="vol"><div class="vtrack" id="vtrack"><div class="vline"></div><div class="vfill" id="vfill"></div></div><div class="vlabel" id="mute">VOL</div></div>
     <div class="bar">
       <span class="time" id="cur">0:00</span>
-      <div class="track" id="track">
-        <div class="line"></div><div class="buffer" id="buf"></div><div class="fill" id="fill"></div>
-        <div class="knob" id="knob"></div><div class="peek" id="peek">0:00</div>
-      </div>
+      <div class="track" id="track"><div class="line"></div><div class="buffer" id="buf"></div><div class="fill" id="fill"></div><div class="knob" id="knob"></div></div>
       <span class="time end" id="dur">2:38</span>
     </div>
   </div>
-  <div class="outro">
-    <div>
-      <h2>מזל טוב</h2>
-      <div class="row">
-        <button class="play" id="again"><i></i>Again<i></i></button>
-        <button class="play" id="back"><i></i>Close<i></i></button>
-      </div>
-    </div>
-  </div>
+  <div class="outro"><div><h2>מזל טוב</h2><div class="row"><button id="again">שוב</button><button id="back">סגירה</button></div></div></div>
 </div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/hls.js/1.5.13/hls.min.js"></script>
+<script>window.BOOK = {"name": "מטר", "sub": "תראו אותו גדל", "line1": "שלוש עשרה שנים.", "line2": "סרט אחד.", "film": "הסרט", "mazal1": "מזל טוב,", "mazal2": "מטר", "love": "באהבה, אמא, אבא, מידן ואייר", "blurbLabel": "תקציר", "blurb": "מהבטן של אמא, דרך המגבת האדומה, הבריכות, הנחלים והטרמפולינות, ועד היום שבו הוא עולה לתורה. כל התמונות שצילמנו לאורך השנים חוזרות לחיים, בסרט אחד.", "watch": "לצפייה בסרט", "dir": "rtl", "base": ""};</script>
+<script src="lib/hls.min.js"></script>
 <script>
 (() => {
   const $ = (id) => document.getElementById(id);
-
-  // film strip (doubled for a seamless loop)
-  const shots = [6, 18, 44, 58, 72, 86, 100, 114, 128, 146];
-  const row = $("row");
-  [...shots, ...shots].forEach((s) => { const f = document.createElement("figure"); f.innerHTML = `<img src="f/${s}.jpg" alt="" loading="lazy">`; f.dataset.t = s; f.dataset.play = ""; row.appendChild(f); });
-
-  // reveal
-  const io = new IntersectionObserver((es) => es.forEach((e) => { if (e.isIntersecting) { e.target.classList.add("in"); io.unobserve(e.target); } }), { threshold: .2 });
-  document.querySelectorAll(".rv").forEach((el) => io.observe(el));
-
-  // ---------- player ----------
   const SRC = "v/index.m3u8";
-  const P = $("player"), v = $("v");
-  const fill = $("fill"), knob = $("knob"), buf = $("buf"), track = $("track"), peek = $("peek");
+  const P = $("player"), v = $("v"), fill = $("fill"), knob = $("knob"), buf = $("buf"), track = $("track");
   const cur = $("cur"), dur = $("dur"), vtrack = $("vtrack"), vfill = $("vfill");
-  let loaded = false, hls;
+  let loaded = false;
   function load() {
     if (loaded) return; loaded = true;
     if (v.canPlayType("application/vnd.apple.mpegurl")) v.src = SRC;
-    else if (window.Hls && Hls.isSupported()) { hls = new Hls({ maxBufferLength: 30 }); hls.loadSource(SRC); hls.attachMedia(v); }
+    else if (window.Hls && Hls.isSupported()) { const h = new Hls({ maxBufferLength: 30 }); h.loadSource(SRC); h.attachMedia(v); }
     else v.src = SRC;
   }
   const fmt = (s) => { s = Math.max(0, Math.floor(s || 0)); return Math.floor(s / 60) + ":" + String(s % 60).padStart(2, "0"); };
   const state = (n) => { P.classList.remove("playing", "paused", "ended"); if (n) P.classList.add(n); };
-
-  async function open(at) {
-    load(); P.classList.add("open"); P.setAttribute("aria-hidden", "false"); document.body.classList.add("locked");
-    try { const el = P; if (el.requestFullscreen) await el.requestFullscreen({ navigationUI: "hide" }); else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen(); } catch (e) {}
-    if (typeof at === "number") { const go = () => { v.currentTime = at; }; v.readyState >= 1 ? go() : v.addEventListener("loadedmetadata", go, { once: true }); }
+  window.openFilm = async () => {
+    load(); P.classList.add("open"); P.setAttribute("aria-hidden", "false"); document.body.classList.add("film-open");
+    try { if (P.requestFullscreen) await P.requestFullscreen({ navigationUI: "hide" }); else if (P.webkitRequestFullscreen) P.webkitRequestFullscreen(); } catch (e) {}
     try { await v.play(); } catch (e) {}
     poke();
-  }
+  };
   function shut() {
-    v.pause(); P.classList.remove("open", "idle"); P.setAttribute("aria-hidden", "true"); document.body.classList.remove("locked"); state();
+    v.pause(); P.classList.remove("open", "idle"); P.setAttribute("aria-hidden", "true"); document.body.classList.remove("film-open"); state();
     try { if (document.fullscreenElement) document.exitFullscreen(); } catch (e) {}
   }
-  function toggle() { if (v.ended) { v.currentTime = 0; return v.play(); } v.paused ? v.play() : v.pause(); }
-
-  document.addEventListener("click", (e) => {
-    const t = e.target.closest("[data-play]"); if (!t || P.contains(t)) return;
-    const fig = e.target.closest("figure[data-t]");
-    open(fig ? +fig.dataset.t : undefined);
-  });
+  const toggle = () => { if (v.ended) { v.currentTime = 0; return v.play(); } v.paused ? v.play() : v.pause(); };
   P.addEventListener("click", (e) => { if (e.target.closest(".bar, .vol, .close, .outro button")) return; toggle(); });
-  $("close").addEventListener("click", shut);
-  $("back").addEventListener("click", shut);
+  $("close").addEventListener("click", shut); $("back").addEventListener("click", shut);
   $("again").addEventListener("click", () => { v.currentTime = 0; v.play(); });
   document.addEventListener("fullscreenchange", () => { if (!document.fullscreenElement && P.classList.contains("open") && !v.ended) shut(); });
-
   v.addEventListener("play", () => state("playing"));
   v.addEventListener("pause", () => { if (!v.ended) state("paused"); poke(); });
   v.addEventListener("ended", () => { state("ended"); P.classList.remove("idle"); });
   v.addEventListener("loadedmetadata", () => { dur.textContent = fmt(v.duration); });
-
   let scrubbing = false;
   (function tick() {
     if (P.classList.contains("open")) {
@@ -269,38 +164,30 @@
     }
     requestAnimationFrame(tick);
   })();
-
   const rx = (e) => { const r = track.getBoundingClientRect(); return Math.min(1, Math.max(0, (e.clientX - r.left) / r.width)); };
   const ry = (e) => { const r = vtrack.getBoundingClientRect(); return Math.min(1, Math.max(0, (r.bottom - e.clientY) / r.height)); };
   function seek(p) { const d = v.duration || 0; fill.style.width = p * 100 + "%"; knob.style.left = p * 100 + "%"; cur.textContent = fmt(p * d); if (d) v.currentTime = p * d; }
-  track.addEventListener("pointermove", (e) => { const p = rx(e); peek.style.left = p * 100 + "%"; peek.textContent = fmt(p * (v.duration || 0)); if (scrubbing) seek(p); });
   track.addEventListener("pointerdown", (e) => { scrubbing = true; P.classList.add("scrubbing"); track.setPointerCapture(e.pointerId); seek(rx(e)); });
+  track.addEventListener("pointermove", (e) => { if (scrubbing) seek(rx(e)); });
   track.addEventListener("pointerup", () => { scrubbing = false; P.classList.remove("scrubbing"); poke(); });
-
-  let vdrag = false;
-  const setVol = (x) => { v.volume = x; v.muted = x === 0; };
+  let vdrag = false; const setVol = (x) => { v.volume = x; v.muted = x === 0; };
   v.addEventListener("volumechange", () => { vfill.style.height = (v.muted ? 0 : v.volume) * 100 + "%"; });
   vtrack.addEventListener("pointerdown", (e) => { vdrag = true; vtrack.setPointerCapture(e.pointerId); setVol(ry(e)); });
   vtrack.addEventListener("pointermove", (e) => { if (vdrag) setVol(ry(e)); });
   vtrack.addEventListener("pointerup", () => { vdrag = false; });
   $("mute").addEventListener("click", () => { v.muted = !v.muted; if (!v.muted && v.volume === 0) v.volume = .8; });
-
-  let idleT;
-  function poke() { P.classList.remove("idle"); clearTimeout(idleT); if (!v.paused && !scrubbing) idleT = setTimeout(() => P.classList.add("idle"), 2400); }
+  let idleT; function poke() { P.classList.remove("idle"); clearTimeout(idleT); if (!v.paused && !scrubbing) idleT = setTimeout(() => P.classList.add("idle"), 2400); }
   ["pointermove", "pointerdown", "keydown", "touchstart"].forEach((t) => P.addEventListener(t, poke, { passive: true }));
-
   window.addEventListener("keydown", (e) => {
     if (!P.classList.contains("open")) return;
-    if (e.code === "Space" || e.key === "k") { e.preventDefault(); toggle(); }
+    if (e.code === "Space") { e.preventDefault(); toggle(); }
     else if (e.key === "Escape") shut();
     else if (e.key === "ArrowRight") v.currentTime = Math.min(v.duration, v.currentTime + 5);
     else if (e.key === "ArrowLeft") v.currentTime = Math.max(0, v.currentTime - 5);
-    else if (e.key === "ArrowUp") setVol(Math.min(1, v.volume + .1));
-    else if (e.key === "ArrowDown") setVol(Math.max(0, v.volume - .1));
-    else if (e.key === "m") v.muted = !v.muted;
     poke();
   });
 })();
 </script>
+<script type="module" src="book.js"></script>
 </body>
 </html>
