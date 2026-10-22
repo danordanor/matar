@@ -30,9 +30,10 @@
 
   /* top bar */
   header { position: fixed; top: 0; inset-inline: 0; height: var(--bar); display: flex; align-items: center; justify-content: space-between; padding: 0 24px; border-bottom: 1px solid var(--line); background: #fff; z-index: 5; }
-  .brand { display: flex; align-items: center; gap: 10px; font-weight: 500; font-size: 18px; }
+  .brand { display: flex; align-items: center; gap: 10px; font-weight: 500; font-size: 18px; white-space: nowrap; }
   .brand svg { width: 28px; height: 28px; }
   .tools { display: flex; gap: 6px; }
+  #addLink .plus { display: none; width: 16px; height: 16px; }
   .b { height: 40px; min-width: 40px; padding: 0 14px; display: inline-flex; align-items: center; justify-content: center; gap: 10px; border: 1px solid #d6d6d6; font-size: 14px; font-weight: 500; transition: border-color .25s, background .25s; white-space: nowrap; }
   .b:hover { border-color: var(--ink); }
   .b.dark { background: var(--ink); color: #fff; border-color: var(--ink); }
@@ -92,9 +93,10 @@
   .full.quiet #book canvas { cursor: none; }
   /* loading: a small book whose pages keep turning, until the real one is ready */
   .wv { position: fixed; inset: 0; z-index: 25; background: rgba(0,0,0,.72); display: grid; place-items: center; padding: 20px; }
+  .wv[hidden] { display: none; }
   .wvbox { position: relative; width: min(92vw, 420px); max-height: 86svh; }
   .wvbox video { display: block; width: 100%; max-height: 86svh; border-radius: 20px; background: #000; }
-  .wvbox .b { position: absolute; top: -14px; left: -14px; background: #fff; border-radius: 50%; }
+  .wvbox .b { position: absolute; top: 10px; left: 10px; width: 34px; height: 34px; padding: 0; border: 0; border-radius: 50%; background: rgba(255,255,255,.9); color: #000; display: grid; place-items: center; font-size: 14px; }
   .loader { position: fixed; inset: 0; z-index: 20; background: #fff; display: grid; place-items: center; transition: opacity .6s var(--ease), visibility 0s linear .6s; }
   .ready .loader { opacity: 0; visibility: hidden; }
   .lb { position: relative; width: 72px; height: 48px; perspective: 420px; }
@@ -120,7 +122,10 @@
 
   @media (max-width: 720px) {
     :root { --bar: 60px; }
-    header { padding: 0 14px; } .tools .wide { display: none; }
+    header { padding: 0 14px; gap: 8px; } .tools .wide { display: none; }
+    .brand { font-size: 15px; gap: 8px; } .brand svg { width: 22px; height: 22px; }
+    header .b { height: 36px; min-width: 36px; padding: 0 10px; font-size: 13px; gap: 6px; }
+    #addLink span { display: none; } #addLink .plus { display: block; }
     footer { grid-template-columns: auto 1fr auto; } footer .strip { display: none; }
     .arrow.l { left: 10px; } .arrow.r { right: 10px; }
   }
@@ -136,7 +141,7 @@
   </div>
   <nav class="tools">
     <button class="b icon" id="full" aria-label="מסך מלא"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M2 6V2h4M10 2h4v4M14 10v4h-4M6 14H2v-4"/></svg></button>
-    <a class="b" href="../add/">הוסיפו ברכה</a>
+    <a class="b" id="addLink" href="../add/"><svg class="plus" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M8 3v10M3 8h10"/></svg><span>הוסיפו ברכה</span></a>
     <button class="b dark" id="watch"><svg class="ic-play" viewBox="0 0 16 16" fill="currentColor"><path d="M4 2.5v11L13 8z"/></svg><svg class="ic-pause" viewBox="0 0 16 16" fill="currentColor"><rect x="3.5" y="2.5" width="3" height="11"/><rect x="9.5" y="2.5" width="3" height="11"/></svg><span id="watchTxt">לצפייה בסרטון</span></button>
   </nav>
 </header>
@@ -172,6 +177,6 @@
 
 <script>window.BOOK = {"name": "מטר", "sub": "תראו אותו גדל", "label": "בר מצווה", "credit": "באהבה, אמא, אבא, מידן ואייר", "line1": "שלוש עשרה שנים. סרטון אחד.", "story": "הוא הגיע אלינו קטן, גדל בבריכות, בנחלים ועל טרמפולינות, מוקף באנשים שאוהבים אותו. ועכשיו הוא בן שלוש עשרה.", "next": "לסרטון", "blurbLabel": "תקציר", "blurb": "מהבטן של אמא, דרך המגבת האדומה, הבריכות, הנחלים והטרמפולינות, ועד היום שבו הוא עולה לתורה. כל התמונות שצילמנו לאורך השנים חוזרות לחיים, בסרטון אחד.", "bless": [{"label": "מאמא ואבא", "title": "מטר שלנו,", "body": "שלוש עשרה שנים שאנחנו מסתכלים עליך גדל, ומתרגשים מחדש כל יום. אתה סקרן, מצחיק, אמיץ ועם לב ענק. תמשיך לטפס גבוה, לשאול שאלות ולהיות בדיוק מי שאתה. אנחנו תמיד פה, מאחוריך.", "sign": "מזל טוב, אמא ואבא"}, {"label": "ממידן", "title": "מטר,", "photo": "f/72.jpg", "body": "אתה האח הכי טוב בעולם. תודה שאתה משחק איתי ומצחיק אותי. אני אוהב אותך המון.", "sign": "מזל טוב, מידן"}, {"label": "מאייר", "title": "אחי,", "photo": "d/01.jpg", "body": "אחי הקטן כבר לא כל כך קטן. תודה על כל הצחוקים, המשחקים והריבים שנגמרים בצחוק. אני גאה בך ותמיד אהיה בשבילך.", "sign": "מזל טוב, אייר"}], "duo": "מטר ואייר", "fromLabel": "ברכה מאת", "inviteLabel": "ספר הברכות", "invite1": "גם אתם", "invite2": "רוצים לברך?", "inviteUrl": "danor.studio/matar/add", "again": "לצפייה שוב", "p_front": "כריכה", "p_page": "עמוד 1", "p_back": "תקציר", "dir": "rtl", "base": "../", "play": "לצפייה בסרטון", "pause": "השהיית הסרטון"};</script>
 <script src="../lib/hls.min.js"></script>
-<script type="module" src="../book.js?v=1792695712"></script>
+<script type="module" src="../book.js?v=1792699184"></script>
 </body>
 </html>
