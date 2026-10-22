@@ -257,7 +257,7 @@ const book = new THREE.Group(); stage.add(book);
 
 // leaves: two cloth boards and paper pages that bend as they turn
 const leaves = [], live = [];
-const COLS = 28, PGAP = .016;
+const COLS = 28, PGAP = .022;
 function makeLeaf(f, i, n) {
   const hard = !!(f[0].hard || f[1].hard), w = hard ? CW : W, h = hard ? CH : H;
   const geo = new THREE.BufferGeometry();
@@ -303,7 +303,7 @@ function layBlocks() {
   const un = n - k;
   // unturned side: leaves k..n-1 at z (n-k)·g … g ; turned side: leaves 0..k-1 at z g … k·g
   const E = .004;   // keep the block just under the top leaf and just above the bottom one
-  const setB = (m, count, side) => { const th = Math.max(0, count - 1) * PGAP - 2 * E; m.visible = th > .001; m.scale.set(W - .012, H - .024, Math.max(th, .001)); m.position.set(side * W / 2, 0, (count + 1) / 2 * PGAP); };
+  const setB = (m, count, side) => { const th = Math.max(0, count - 1) * PGAP - 2 * E; m.visible = th > .001; m.scale.set(CW - .008, CH - .01, Math.max(th, .001)); m.position.set(side * (CW - .008) / 2, 0, (count + 1) / 2 * PGAP); };
   setB(blockA, un, S); setB(blockB, k, -S);
 }
 // the spine, seen while the book is closed
@@ -327,7 +327,7 @@ video.addEventListener("playing", () => { filmMat.map = vtex; filmMat.needsUpdat
 const gc = document.createElement("canvas"); gc.width = 512; gc.height = 4; { const g = gc.getContext("2d"); const gr = g.createLinearGradient(0, 0, 512, 0);
   gr.addColorStop(0, "rgba(0,0,0,0)"); gr.addColorStop(.44, "rgba(0,0,0,.05)"); gr.addColorStop(.5, "rgba(0,0,0,.32)"); gr.addColorStop(.56, "rgba(0,0,0,.05)"); gr.addColorStop(1, "rgba(0,0,0,0)"); g.fillStyle = gr; g.fillRect(0, 0, 512, 4); }
 const gutterMat = new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(gc), transparent: true, opacity: 0, depthWrite: false });
-const gutter = new THREE.Mesh(new THREE.PlaneGeometry(.5, H), gutterMat);  book.add(gutter);
+const gutter = new THREE.Mesh(new THREE.PlaneGeometry(.5, H), gutterMat);  book.add(gutter); gutter.visible = false;
 
 // ---------- state ----------
 // 0 = front cover · 1..FILM-1 = pages · FILM = the film across the spread · END = back cover (the story)
@@ -430,7 +430,7 @@ renderer.domElement.addEventListener("pointermove", (e) => {
   const r = renderer.domElement.getBoundingClientRect();
   look.x = (e.clientX - r.left) / r.width * 2 - 1; look.y = (e.clientY - r.top) / r.height * 2 - 1;
   if (drag) {
-    const dx = e.clientX - drag.x, span = r.width * (state === 0 || state === END ? .35 : .42);
+    const dx = sideways() ? e.clientY - drag.y : e.clientX - drag.x, span = (sideways() ? r.height : r.width) * (state === 0 || state === END ? .35 : .42);
     const forward = -S * dx / span;                                                // toward the spine = forward
     if (Math.abs(dx) > 6) drag.moved = true;
     const p = drag.dir > 0 ? clamp(forward) : clamp(1 + forward);
@@ -440,10 +440,10 @@ renderer.domElement.addEventListener("pointermove", (e) => {
   renderer.domElement.style.cursor = pick(e) ? "pointer" : "default";
 });
 renderer.domElement.addEventListener("pointerdown", (e) => {
-  down = { x: e.clientX };
+  down = { x: e.clientX, y: e.clientY };
   const g = grab(e);
   if (g && g.L && leaves.every((L) => L.p === 0 || L.p === 1)) {
-    drag = { L: g.L, dir: g.dir, x: e.clientX, moved: false, kind: g.kind }; g.L.drag = true;
+    drag = { L: g.L, dir: g.dir, x: e.clientX, y: e.clientY, moved: false, kind: g.kind }; g.L.drag = true;
     renderer.domElement.setPointerCapture(e.pointerId); renderer.domElement.style.cursor = "grabbing";
   }
 });
@@ -456,7 +456,7 @@ function release(e) {
     if (d.kind === "back") return go(FILM, { restart: true });
     return go(state + d.dir);
   }
-  if (!down) return; const dx = e.clientX - down.x; down = null;
+  if (!down) return; const dx = sideways() ? e.clientY - down.y : e.clientX - down.x; down = null;
   if (Math.abs(dx) > 40) return (dx < 0) === RTL ? prev() : next();   // swipe anywhere
   const hit = pick(e); if (!hit) return;
   const { kind } = hit.object.userData;
@@ -498,6 +498,8 @@ function buildStrip() {
 function markStrip() { strip.querySelectorAll(".pg").forEach((el) => el.classList.toggle("on", +el.dataset.k === state)); const on = strip.querySelector(".pg.on"); if (on) on.scrollIntoView({ block: "nearest", inline: "nearest", behavior: "smooth" }); }
 
 // ---------- frame ----------
+let rotZ = 0;
+const sideways = () => isFull() && !TV && host.clientHeight > host.clientWidth;
 function fit() {
   const w = host.clientWidth, h = host.clientHeight, pr = renderer.getPixelRatio();
   if (renderer.domElement.width !== Math.floor(w * pr) || renderer.domElement.height !== Math.floor(h * pr)) renderer.setSize(w, h);
@@ -505,6 +507,7 @@ function fit() {
   const open = state > 0 && state < END, f = Math.tan(camera.fov * Math.PI / 360);
   const tight = TV || isFull();
   const needW = open ? 2 * CW * (tight ? 1.04 : 1.16) : CW * (tight ? 1.5 : 1.75), needH = CH * (open ? (tight ? 1.05 : 1.18) : (tight ? 1.12 : 1.3));
+  if (sideways()) return Math.max(needW / 2 / f, needH / 2 / (f * camera.aspect));   // the book lies along the long side of the phone
   return Math.max(needH / 2 / f, needW / 2 / (f * camera.aspect));
 }
 const clock = new THREE.Clock(), goal = new THREE.Vector3(); let liveAt = 0;
@@ -528,7 +531,7 @@ function frame() {
   const filmOn = state === FILM && resting;
   film.position.z = gutter.position.z = leaves.length * PGAP + .004;
   filmMat.opacity += ((filmOn ? 1 : 0) - filmMat.opacity) * Math.min(1, dt * (filmOn ? 4 : 10));
-  gutterMat.opacity = filmMat.opacity; film.visible = gutter.visible = filmMat.opacity > .01;
+  film.visible = filmMat.opacity > .01;
 
   const wantOff = state === 0 ? -S * CW / 2 : state === END ? S * CW / 2 : 0;
   offset += (wantOff - offset) * Math.min(1, dt * 3.2); book.position.x = offset;
@@ -536,6 +539,7 @@ function frame() {
   const calm = state === FILM ? 0 : 1;
   yaw += (wantYaw - yaw) * Math.min(1, dt * 3); stage.rotation.y = yaw + look.x * .05 * calm;
   stage.rotation.x = look.y * .03 * calm;
+  rotZ += (((sideways() ? -Math.PI / 2 : 0)) - rotZ) * Math.min(1, dt * 4); stage.rotation.z = rotZ;
   goal.set(0, 0, fit()); camera.position.lerp(goal, Math.min(1, dt * 3)); camera.lookAt(0, 0, 0);
   // moving photos redraw at ~12 fps, enough for a gentle drift and easy on phones
   if (clock.elapsedTime - liveAt > .08) { liveAt = clock.elapsedTime; for (const L of live) { const lf = leaves[L.leaf]; if (Math.abs(L.leaf - state) <= 1 || (lf.p > 0 && lf.p < 1)) { L.face.draw(L.g, L.c.width, L.c.height, clock.elapsedTime); L.t.needsUpdate = true; } } }
