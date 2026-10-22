@@ -24,7 +24,14 @@
   * { box-sizing: border-box; margin: 0; padding: 0; }
   html { background: #f3f1ec; }
   body { font-family: "Swiss", system-ui, sans-serif; color: var(--ink); -webkit-font-smoothing: antialiased; min-height: 100svh; display: grid; place-items: center; padding: 20px 16px;
-         background: radial-gradient(90% 70% at 85% 0%, rgba(255,210,74,.35), transparent 60%), radial-gradient(70% 60% at 0% 100%, rgba(244,166,42,.18), transparent 60%), linear-gradient(160deg, #f8f7f3, #efece5); }
+         background: linear-gradient(160deg, #f8f7f3, #efece5); position: relative; isolation: isolate; }
+  /* two soft colour pools drifting very slowly behind the card */
+  body::before, body::after { content: ""; position: fixed; z-index: -1; border-radius: 50%; filter: blur(70px); pointer-events: none; will-change: transform; }
+  body::before { width: 70vmax; height: 70vmax; top: -30vmax; right: -20vmax; background: rgba(255,210,74,.42); animation: driftA 38s ease-in-out infinite alternate; }
+  body::after { width: 55vmax; height: 55vmax; bottom: -25vmax; left: -15vmax; background: rgba(244,166,42,.22); animation: driftB 47s ease-in-out infinite alternate; }
+  @keyframes driftA { to { transform: translate(-18vmax, 14vmax) scale(1.15); } }
+  @keyframes driftB { to { transform: translate(16vmax, -14vmax) scale(.9); } }
+  @media (prefers-reduced-motion: reduce) { body::before, body::after { animation: none; } }
   button, input, textarea { font: inherit; color: inherit; }
 
   /* a greeting card: big photo on top, a few handwritten lines below */
