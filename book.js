@@ -31,7 +31,13 @@ function canvasFor(mirror) {
   return [c, g];
 }
 function cloth(g, w, h) {
-  g.fillStyle = CLOTH; g.fillRect(0, 0, w, h);
+  // a soft warm gradient (light yellow → amber), with a faint highlight at the top
+  const gr = g.createLinearGradient(0, 0, w, h);
+  gr.addColorStop(0, "#FFE27A"); gr.addColorStop(.5, "#FFC83A"); gr.addColorStop(1, "#F4A62A");
+  g.fillStyle = gr; g.fillRect(0, 0, w, h);
+  const hi = g.createRadialGradient(w * .3, h * .1, 0, w * .3, h * .1, w * .9);
+  hi.addColorStop(0, "rgba(255,255,255,.22)"); hi.addColorStop(1, "rgba(255,255,255,0)");
+  g.fillStyle = hi; g.fillRect(0, 0, w, h);
   const id = g.getImageData(0, 0, w, h), d = id.data;
   for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {          // fine linen weave
     const i = (y * w + x) * 4, n = (Math.random() - .5) * 9 + ((x % 3 === 0) ? 2.5 : 0) + ((y % 3 === 0) ? -2.5 : 0);
@@ -261,7 +267,7 @@ function place(L, p) {
 }
 
 // the spine, seen while the book is closed
-const spine = new THREE.Mesh(new THREE.BoxGeometry(.012, CH, 1), new THREE.MeshStandardMaterial({ color: 0xE9B800, roughness: .8 }));
+const spine = new THREE.Mesh(new THREE.BoxGeometry(.012, CH, 1), new THREE.MeshStandardMaterial({ color: 0xF2B030, roughness: .8 }));
 spine.castShadow = true; book.add(spine);
 
 // ---------- the film, printed across the open spread ----------
@@ -272,11 +278,10 @@ else if (window.Hls && Hls.isSupported()) { const h = new Hls({ maxBufferLength:
 else video.src = SRC;
 const vtex = new THREE.VideoTexture(video); vtex.colorSpace = THREE.SRGBColorSpace;
 const ptex = new THREE.TextureLoader().load(`${BASE}poster.jpg`); ptex.colorSpace = THREE.SRGBColorSpace;
-const crop = (t) => { const k = (2 * W / H) / (16 / 9); t.repeat.set(k, 1); t.offset.set((1 - k) / 2, 0); return t; };
-crop(vtex); crop(ptex);
 const filmMat = new THREE.MeshBasicMaterial({ map: ptex, transparent: true, opacity: 0, toneMapped: false });
-const film = new THREE.Mesh(new THREE.PlaneGeometry(2 * W, H), filmMat);
- film.userData.kind = "film"; book.add(film);
+const FILM_W = 2 * W * .96, FILM_H = FILM_W * 9 / 16;
+const film = new THREE.Mesh(new THREE.PlaneGeometry(FILM_W, FILM_H), filmMat);
+film.userData.kind = "film"; book.add(film); window.__book = { film, filmMat, ptex, get leaves() { return leaves; } };
 video.addEventListener("playing", () => { filmMat.map = vtex; filmMat.needsUpdate = true; }, { once: true });
 // the soft fold in the middle of the spread
 const gc = document.createElement("canvas"); gc.width = 512; gc.height = 4; { const g = gc.getContext("2d"); const gr = g.createLinearGradient(0, 0, 512, 0);
@@ -341,7 +346,6 @@ function setFull(on) {
   } catch (e) {}
 }
 $("full").onclick = (e) => { e.stopPropagation(); setFull(!isFull()); };
-$("exitFull").onclick = (e) => { e.stopPropagation(); setFull(false); };
 const fsChange = () => { if (!document.fullscreenElement && !document.webkitFullscreenElement && isFull() && !TV) document.body.classList.remove("full"); };
 document.addEventListener("fullscreenchange", fsChange); document.addEventListener("webkitfullscreenchange", fsChange);
 const wave = $("wave");
@@ -372,29 +376,60 @@ function pick(e) {
   ray.setFromCamera(m, camera);
   return ray.intersectObjects([film, ...leaves.flatMap((l) => l.meshes)], false).filter((h) => h.object !== film || filmMat.opacity > .5)[0];
 }
-let down = null;
+let down = null, drag = null;
+// which leaf would a pointer-down turn, and which way
+function grab(e) {
+  const hit = pick(e); if (!hit) return null;
+  const { kind, leaf, side } = hit.object.userData;
+  if (kind === "film") return { L: leaves[state], dir: 1, kind };                 // the film spread: its left leaf is next to turn
+  if (side === 0 && leaf === state && state < END) return { L: leaves[state], dir: 1, kind };
+  if (side === 1 && leaf === state - 1) return { L: leaves[state - 1], dir: -1, kind };
+  return { L: null, dir: 0, kind };
+}
 renderer.domElement.addEventListener("pointermove", (e) => {
   const r = renderer.domElement.getBoundingClientRect();
   look.x = (e.clientX - r.left) / r.width * 2 - 1; look.y = (e.clientY - r.top) / r.height * 2 - 1;
+  if (drag) {
+    const dx = e.clientX - drag.x, span = r.width * (state === 0 || state === END ? .35 : .42);
+    const forward = -S * dx / span;                                                // toward the spine = forward
+    if (Math.abs(dx) > 6) drag.moved = true;
+    const p = drag.dir > 0 ? clamp(forward) : clamp(1 + forward);
+    drag.L.p = p; place(drag.L, ease(p)); autoT = 0;
+    return;
+  }
   renderer.domElement.style.cursor = pick(e) ? "pointer" : "default";
 });
-renderer.domElement.addEventListener("pointerdown", (e) => { down = { x: e.clientX }; });
-renderer.domElement.addEventListener("pointerup", (e) => {
-  if (!down) return; const dx = e.clientX - down.x; down = null;
-  if (Math.abs(dx) > 40) return (dx < 0) === RTL ? prev() : next();   // drag the paper
-  const hit = pick(e); if (!hit) return;
-  const { kind, leaf, side } = hit.object.userData;
-  if (kind === "film") return video.paused ? video.play() : video.pause();
-  if (kind === "back") return go(FILM, { restart: true });
-  if (side === 0 && leaf === state) next();            // the page waiting to be turned
-  else if (side === 1 && leaf === state - 1) prev();    // the page just turned
-  else if (kind === "front") next();
+renderer.domElement.addEventListener("pointerdown", (e) => {
+  down = { x: e.clientX };
+  const g = grab(e);
+  if (g && g.L && leaves.every((L) => L.p === 0 || L.p === 1)) {
+    drag = { L: g.L, dir: g.dir, x: e.clientX, moved: false, kind: g.kind }; g.L.drag = true;
+    renderer.domElement.setPointerCapture(e.pointerId); renderer.domElement.style.cursor = "grabbing";
+  }
 });
+function release(e) {
+  if (drag) {
+    const d = drag; drag = null; d.L.drag = false; renderer.domElement.style.cursor = "default";
+    if (d.moved) { if (d.dir > 0 ? d.L.p > .3 : d.L.p < .7) go(state + d.dir); return; }   // past the fold: it turns, else it falls back
+    // a plain tap
+    if (d.kind === "film") return video.paused ? video.play() : video.pause();
+    if (d.kind === "back") return go(FILM, { restart: true });
+    return go(state + d.dir);
+  }
+  if (!down) return; const dx = e.clientX - down.x; down = null;
+  if (Math.abs(dx) > 40) return (dx < 0) === RTL ? prev() : next();   // swipe anywhere
+  const hit = pick(e); if (!hit) return;
+  const { kind } = hit.object.userData;
+  if (kind === "back") return go(FILM, { restart: true });
+  if (kind === "front") next();
+}
+renderer.domElement.addEventListener("pointerup", release);
+renderer.domElement.addEventListener("pointercancel", release);
 addEventListener("keydown", (e) => {
   if (e.key === " ") { e.preventDefault(); state === FILM ? (video.paused ? video.play() : video.pause()) : next(); }
   else if (e.key === "ArrowLeft") RTL ? next() : prev();
   else if (e.key === "ArrowRight") RTL ? prev() : next();
-  else if (e.key === "Escape") go(0);
+  else if (e.key === "Escape") { if (isFull()) setFull(false); else go(0); }
 });
 
 // ---------- frame ----------
@@ -403,16 +438,17 @@ function fit() {
   if (renderer.domElement.width !== Math.floor(w * pr) || renderer.domElement.height !== Math.floor(h * pr)) renderer.setSize(w, h);
   camera.aspect = w / h; camera.updateProjectionMatrix();
   const open = state > 0 && state < END, f = Math.tan(camera.fov * Math.PI / 360);
-  const tvK = TV ? 1.22 : 1;
-  const needW = (open ? 2 * CW * 1.16 : CW * 1.75) * tvK, needH = CH * (open ? 1.18 : 1.3) * tvK;
+  const tight = TV || isFull();
+  const needW = open ? 2 * CW * (tight ? 1.04 : 1.16) : CW * (tight ? 1.5 : 1.75), needH = CH * (open ? (tight ? 1.05 : 1.18) : (tight ? 1.12 : 1.3));
   return Math.max(needH / 2 / f, needW / 2 / (f * camera.aspect));
 }
-const clock = new THREE.Clock(), goal = new THREE.Vector3();
+const clock = new THREE.Clock(), goal = new THREE.Vector3(); let liveAt = 0;
 let offset = -S * CW / 2, yaw = -S * .42;
 function frame() {
   const dt = Math.min(.05, clock.getDelta());
   // turn leaves one after another
   for (const L of leaves) {
+    if (L.drag) continue;
     const g = L.i < state ? 1 : 0; if (L.p === g) continue;
     const ready = g ? leaves.every((o) => o.i >= L.i || o.i >= state || o.p > .25) : leaves.every((o) => o.i <= L.i || o.i < state || o.p < .75);
     if (!ready) continue;
@@ -421,7 +457,7 @@ function frame() {
   }
   const resting = leaves.every((L) => L.p === 0 || L.p === 1);
   const closed = (state === 0 || state === END);
-  spine.visible = closed || !resting;
+  spine.visible = closed && resting;
   spine.scale.z = (leaves.length - 1) * PGAP + .004; spine.position.set(-S * .006, 0, (leaves.length + 1) / 2 * PGAP);
   const filmOn = state === FILM && resting;
   film.position.z = gutter.position.z = leaves.length * PGAP + .004;
@@ -435,7 +471,8 @@ function frame() {
   yaw += (wantYaw - yaw) * Math.min(1, dt * 3); stage.rotation.y = yaw + look.x * .05 * calm;
   stage.rotation.x = look.y * .03 * calm;
   goal.set(0, 0, fit()); camera.position.lerp(goal, Math.min(1, dt * 3)); camera.lookAt(0, 0, 0);
-  for (const L of live) { const lf = leaves[L.leaf]; if (Math.abs(L.leaf - state) <= 1 || (lf.p > 0 && lf.p < 1)) { L.face.draw(L.g, L.c.width, L.c.height, clock.elapsedTime); L.t.needsUpdate = true; } }
+  // moving photos redraw at ~12 fps, enough for a gentle drift and easy on phones
+  if (clock.elapsedTime - liveAt > .08) { liveAt = clock.elapsedTime; for (const L of live) { const lf = leaves[L.leaf]; if (Math.abs(L.leaf - state) <= 1 || (lf.p > 0 && lf.p < 1)) { L.face.draw(L.g, L.c.width, L.c.height, clock.elapsedTime); L.t.needsUpdate = true; } } }
   const still = leaves.every((L) => L.p === 0 || L.p === 1);
   if (still && state > 0 && state !== FILM && state < END) { autoT += dt; if (autoT > AUTO) { autoT = 0; go(state + 1); } }
   else if (still && TV && tvOn && (state === END || state === 0)) { autoT += dt; if (autoT > (state === END ? 12 : 4)) { autoT = 0; if (state === END) tvLoop(); else go(1); } }
