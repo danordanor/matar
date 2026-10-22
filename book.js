@@ -30,7 +30,13 @@ function canvasFor(mirror) {
   const g = c.getContext("2d"); if (mirror) { g.translate(TEX_W, 0); g.scale(-1, 1); }
   return [c, g];
 }
+const clothCache = {};
 function cloth(g, w, h) {
+  const key = w + "x" + h;
+  if (!clothCache[key]) { const c = document.createElement("canvas"); c.width = w; c.height = h; clothDraw(c.getContext("2d"), w, h); clothCache[key] = c; }
+  g.drawImage(clothCache[key], 0, 0);
+}
+function clothDraw(g, w, h) {
   // a soft warm gradient (light yellow → amber), with a faint highlight at the top
   const gr = g.createLinearGradient(0, 0, w, h);
   gr.addColorStop(0, "#FFE27A"); gr.addColorStop(.5, "#FFC83A"); gr.addColorStop(1, "#F4A62A");
@@ -80,19 +86,29 @@ async function faces() {
   const DUO = await Promise.all(Array.from({ length: 18 }, (_, i) => loadImg(`${BASE}d/${String(i + 1).padStart(2, "0")}.jpg`)));
   const M = 92;
   const sx = (w) => RTL ? w - M : M;
-  const front = (g, w, h) => {
+  // the cover: six frames that keep swapping, at random, for other moments from the book
+  let coverPool = [];
+  const slots = [6, 18, 58, 86, 114, 146].map((k) => ({ im: IMG[k], next: null, t0: 0 }));
+  let lastSwap = 0;
+  const front = (g, w, h, t = 0) => {
     cloth(g, w, h);
     txt(g, T.label, sx(w), M + 30, 30, 400, SUBL);
     g.font = `500 150px "${FONT}"`; const tw = Math.max(g.measureText(T.name + ",").width, g.measureText(T.sub + ".").width);
     const ts = Math.min(150, 150 * (w - 2 * M) / (tw + 20));
     txt(g, T.name + ",", sx(w), M + 110 + ts, ts, 500, INKL, "start", -ts / 50);
     txt(g, T.sub + ".", sx(w), M + 110 + ts * 2, ts, 500, INKL, "start", -ts / 50);
+    // every ~2.5 s one frame fades to another picture
+    if (t && coverPool.length > 6 && t - lastSwap > 2.5) {
+      lastSwap = t; const sl = slots[Math.floor(Math.random() * slots.length)];
+      if (!sl.next) { const shown = new Set(slots.map((x) => x.im)); const pick = coverPool.filter((im) => !shown.has(im)); sl.next = pick[Math.floor(Math.random() * pick.length)]; sl.t0 = t; }
+    }
     const cols = 3, gap = 12, gw = w - 2 * M, cw = (gw - gap * (cols - 1)) / cols, ch = cw * 9 / 16, y0 = h - M - 120 - 2 * ch - gap;
-    [6, 18, 58, 86, 114, 146].map((k) => IMG[k]).forEach((im, i) => {
-      if (!im) return; const c = i % cols, r = Math.floor(i / cols);
+    const cover = (im, x, y, alpha) => { if (!im) return; const k = Math.max(cw / im.width, ch / im.height); g.save(); g.globalAlpha = alpha; g.beginPath(); g.rect(x, y, cw, ch); g.clip(); g.drawImage(im, x + (cw - im.width * k) / 2, y + (ch - im.height * k) / 2, im.width * k, im.height * k); g.restore(); };
+    slots.forEach((sl, i) => {
+      const c = i % cols, r = Math.floor(i / cols);
       const x = RTL ? w - M - (c + 1) * cw - c * gap : M + c * (cw + gap), y = y0 + r * (ch + gap);
-      const k = Math.max(cw / im.width, ch / im.height);
-      g.save(); g.beginPath(); g.rect(x, y, cw, ch); g.clip(); g.drawImage(im, x + (cw - im.width * k) / 2, y + (ch - im.height * k) / 2, im.width * k, im.height * k); g.restore();
+      cover(sl.im, x, y, 1);
+      if (sl.next) { const f = clamp((t - sl.t0) / .9); cover(sl.next, x, y, f); if (f >= 1) { sl.im = sl.next; sl.next = null; } }
     });
     txt(g, T.credit, sx(w), h - M, 28, 400, SUBL);
   };
@@ -179,6 +195,7 @@ async function faces() {
   const wishes = await fetchWishes();
   const wishImgs = await Promise.all(wishes.map((w) => w.photo_path ? loadImg(`${SB}/storage/v1/object/public/matar/${w.photo_path}`) : null));
   const qr = await loadImg(QR_SRC);
+  coverPool = [...Object.values(IMG), ...DUO, ...wishImgs, ...blessImgs].filter(Boolean);
   const wishPage = (wsh, im) => ({ kind: "page", draw: (g, w, h) => {
     paper(g, w, h);
     txt(g, T.fromLabel, sx(w), M + 24, 26, 400, GREY);
@@ -197,10 +214,8 @@ async function faces() {
   const invite = { kind: "invite", draw: (g, w, h) => {
     paper(g, w, h);
     txt(g, T.inviteLabel, sx(w), M + 24, 26, 400, GREY);
-    txt(g, T.invite1, sx(w), h * .30, 84, 600, INK, "start", -2);
-    txt(g, T.invite2, sx(w), h * .30 + 100, 84, 600, INK, "start", -2);
-    if (qr) { const q = w * .42; g.fillStyle = "#fff"; g.fillRect((w - q) / 2 - 24, h * .46 - 24, q + 48, q + 48); g.drawImage(qr, (w - q) / 2, h * .46, q, q); }
-    txt(g, T.inviteUrl, w / 2, h * .46 + w * .42 + 90, 30, 500, INK, "center");
+    if (qr) { const q = Math.round(w * .2), x = RTL ? w - M - q : M, y = h - M - q - 70; g.fillStyle = "#fff"; g.fillRect(x - 10, y - 10, q + 20, q + 20); g.drawImage(qr, x, y, q, q);
+      txt(g, T.invite1 + " " + T.invite2, sx(w), h - M - 30, 26, 500, INK); txt(g, T.inviteUrl, sx(w), h - M, 22, 400, GREY); }
   } };
   const endPage = { kind: "page", draw: (g, w, h) => { paper(g, w, h); txt(g, T.credit, w / 2, h / 2, 30, 400, GREY, "center"); } };
   const after = [...wishes.map((wsh, i) => wishPage(wsh, wishImgs[i])), invite];
@@ -209,7 +224,7 @@ async function faces() {
 
   // leaf = [front, back]; spread k shows [leaf k-1 back (right), leaf k front (left)]
   return [
-    [{ kind: "front", draw: front, hard: true }, scatter],
+    [{ kind: "front", draw: front, hard: true, live: true }, scatter],
     [blessing(parents, blessImgs[0]), blessing(meidan, blessImgs[1])],
     [blessing(iyar, blessImgs[2]), duoPage(DUO.slice(0, 9), 1)],
     [duoPage(DUO.slice(9), 2), { kind: "inner", draw: black }],
@@ -242,7 +257,7 @@ const book = new THREE.Group(); stage.add(book);
 
 // leaves: two cloth boards and paper pages that bend as they turn
 const leaves = [], live = [];
-const COLS = 28, PGAP = .005;
+const COLS = 28, PGAP = .016;
 function makeLeaf(f, i, n) {
   const hard = !!(f[0].hard || f[1].hard), w = hard ? CW : W, h = hard ? CH : H;
   const geo = new THREE.BufferGeometry();
@@ -279,6 +294,18 @@ function place(L, p) {
   L.geo.attributes.position.needsUpdate = true; L.geo.computeVertexNormals(); L.geo.computeBoundingSphere();
 }
 
+// the page blocks: the stack under the top page on each side, so the book has a body
+const blockMat = new THREE.MeshStandardMaterial({ color: 0xf1ede4, roughness: 1 });
+const blockA = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), blockMat), blockB = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), blockMat);
+blockA.castShadow = blockB.castShadow = true; book.add(blockA, blockB);
+function layBlocks() {
+  const n = leaves.length, k = leaves.filter((L) => L.p >= .5).length;    // k leaves lie on the turned side
+  const un = n - k;
+  // unturned side: leaves k..n-1 at z (n-k)·g … g ; turned side: leaves 0..k-1 at z g … k·g
+  const E = .004;   // keep the block just under the top leaf and just above the bottom one
+  const setB = (m, count, side) => { const th = Math.max(0, count - 1) * PGAP - 2 * E; m.visible = th > .001; m.scale.set(W - .012, H - .024, Math.max(th, .001)); m.position.set(side * W / 2, 0, (count + 1) / 2 * PGAP); };
+  setB(blockA, un, S); setB(blockB, k, -S);
+}
 // the spine, seen while the book is closed
 const spine = new THREE.Mesh(new THREE.BoxGeometry(.012, CH, 1), new THREE.MeshStandardMaterial({ color: 0xF2B030, roughness: .8 }));
 spine.castShadow = true; book.add(spine);
@@ -292,7 +319,7 @@ else video.src = SRC;
 const vtex = new THREE.VideoTexture(video); vtex.colorSpace = THREE.SRGBColorSpace;
 const ptex = new THREE.TextureLoader().load(`${BASE}poster.jpg`); ptex.colorSpace = THREE.SRGBColorSpace;
 const filmMat = new THREE.MeshBasicMaterial({ map: ptex, transparent: true, opacity: 0, toneMapped: false });
-const FILM_W = 2 * W, FILM_H = FILM_W * 9 / 16;
+const FILM_W = 2 * W - .08, FILM_H = FILM_W * 9 / 16;
 const film = new THREE.Mesh(new THREE.PlaneGeometry(FILM_W, FILM_H), filmMat);
 film.userData.kind = "film"; book.add(film); window.__book = { film, filmMat, ptex, get leaves() { return leaves; } };
 video.addEventListener("playing", () => { filmMat.map = vtex; filmMat.needsUpdate = true; }, { once: true });
@@ -496,6 +523,7 @@ function frame() {
   const resting = leaves.every((L) => L.p === 0 || L.p === 1);
   const closed = (state === 0 || state === END);
   spine.visible = closed && resting;
+  layBlocks();
   spine.scale.z = (leaves.length - 1) * PGAP + .004; spine.position.set(-S * .006, 0, (leaves.length + 1) / 2 * PGAP);
   const filmOn = state === FILM && resting;
   film.position.z = gutter.position.z = leaves.length * PGAP + .004;
@@ -505,7 +533,7 @@ function frame() {
   const wantOff = state === 0 ? -S * CW / 2 : state === END ? S * CW / 2 : 0;
   offset += (wantOff - offset) * Math.min(1, dt * 3.2); book.position.x = offset;
   const wantYaw = state === 0 ? -S * .42 : state === END ? S * .42 : 0;
-  const calm = state === FILM ? .3 : 1;
+  const calm = state === FILM ? 0 : 1;
   yaw += (wantYaw - yaw) * Math.min(1, dt * 3); stage.rotation.y = yaw + look.x * .05 * calm;
   stage.rotation.x = look.y * .03 * calm;
   goal.set(0, 0, fit()); camera.position.lerp(goal, Math.min(1, dt * 3)); camera.lookAt(0, 0, 0);
