@@ -23,9 +23,8 @@
   :root { --ink: #16140f; --pen: #1f2d5a; --soft: #9a948a; --ease: cubic-bezier(.22, 1, .36, 1); }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   html { background: #f3f1ec; }
-  body { font-family: "Swiss", system-ui, sans-serif; color: var(--ink); -webkit-font-smoothing: antialiased; min-height: 100svh; display: grid; place-items: center; padding: 20px 16px;
+  body { font-family: "Swiss", system-ui, sans-serif; color: var(--ink); -webkit-font-smoothing: antialiased; min-height: 100svh; display: grid; place-items: center; padding: 36px 20px 28px;
          background: linear-gradient(160deg, #f8f7f3, #efece5); position: relative; isolation: isolate; }
-  /* two soft colour pools drifting very slowly behind the card */
   body::before, body::after { content: ""; position: fixed; z-index: -1; border-radius: 50%; filter: blur(70px); pointer-events: none; will-change: transform; }
   body::before { width: 70vmax; height: 70vmax; top: -30vmax; right: -20vmax; background: rgba(255,210,74,.42); animation: driftA 38s ease-in-out infinite alternate; }
   body::after { width: 55vmax; height: 55vmax; bottom: -25vmax; left: -15vmax; background: rgba(244,166,42,.22); animation: driftB 47s ease-in-out infinite alternate; }
@@ -34,73 +33,98 @@
   @media (prefers-reduced-motion: reduce) { body::before, body::after { animation: none; } }
   button, input, textarea { font: inherit; color: inherit; }
 
-  /* a greeting card: big photo on top, a few handwritten lines below */
-  .stack { position: relative; width: min(340px, 100%); }
-  /* other blessings waiting behind this one */
-  .stack::before, .stack::after { content: ""; position: absolute; inset: 0; border-radius: 28px; box-shadow: 0 30px 50px -30px rgba(40, 30, 10, .3); }
-  .stack::before { transform: rotate(-6deg) translate(-14px, 10px); background: #ebe7dd; }
-  .stack::after { transform: rotate(4deg) translate(14px, 6px); background: #f3f0e9; }
-  .card { background: #fff; border-radius: 28px; overflow: hidden; position: relative; z-index: 1;
-          box-shadow: 0 34px 60px -30px rgba(40, 30, 10, .4), 0 0 0 1px rgba(0,0,0,.035); }
+  /* a small card on top of a neat pile of others */
+  .stack { position: relative; width: min(296px, 100%); }
+  .stack::before, .stack::after { content: ""; position: absolute; left: 0; right: 0; top: 0; bottom: 0; background: #fff; border-radius: 30px; transform-origin: 50% 0; }
+  .stack::before { transform: translateY(-22px) scale(.86); opacity: .45; }
+  .stack::after { transform: translateY(-11px) scale(.93); opacity: .7; box-shadow: 0 10px 30px -18px rgba(40,30,10,.3); }
+  .card { position: relative; z-index: 1; background: #fff; border-radius: 30px; padding: 10px 10px 12px;
+          box-shadow: 0 30px 50px -28px rgba(40, 30, 10, .45), 0 0 0 1px rgba(0,0,0,.04); }
 
-  .photo { position: relative; aspect-ratio: 1 / 1; background: linear-gradient(150deg, #f6f4ee, #ebe7dd); cursor: pointer; overflow: hidden; }
+  .photo { position: relative; aspect-ratio: 1 / 1; border-radius: 22px; overflow: hidden; background: #f1eee7; cursor: pointer; }
   .photo input { position: absolute; inset: 0; opacity: 0; cursor: pointer; z-index: 3; }
-  .photo .hint { position: absolute; inset: 0; display: grid; place-items: center; text-align: center; transition: opacity .3s; }
-  .photo .hint svg { width: 120px; height: 120px; margin-top: -14px; }
-  .photo .hint span { position: absolute; bottom: 58px; left: 0; right: 0; font-size: 13px; color: rgba(22,20,15,.6); }
+  .photo .hint { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; text-align: center; transition: opacity .3s; }
+  .photo .hint svg { width: 86px; height: 86px; }
+  .photo .hint span { font-size: 12px; color: rgba(22,20,15,.5); }
+  /* two quiet choices: a photo, or a video */
+  .pick { position: absolute; bottom: 12px; left: 0; right: 0; z-index: 4; display: flex; justify-content: center; gap: 8px; }
+  .pick label { position: relative; display: inline-flex; align-items: center; gap: 6px; height: 34px; padding: 0 13px 0 11px; border-radius: 999px; background: #fff; color: var(--ink);
+                font-size: 12.5px; font-weight: 500; box-shadow: 0 1px 2px rgba(0,0,0,.06), 0 0 0 1px rgba(0,0,0,.06); cursor: pointer; transition: transform .25s var(--ease), box-shadow .25s; }
+  .pick label:active { transform: scale(.96); }
+  .pick svg { width: 16px; height: 16px; }
+  .pick input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+  .photo.has .pick, .photo.vid .pick { display: none; }
   .photo img, .photo video { display: none; position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
   .photo.has img, .photo.vid video { display: block; } .photo.has .hint, .photo.vid .hint { opacity: 0; }
   .photo.vid img { display: none; }
-  .rec { position: absolute; bottom: 14px; left: 50%; transform: translateX(-50%); z-index: 4; display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px 8px 12px; border-radius: 999px;
-         background: #fff; color: var(--ink); font-size: 13px; font-weight: 500; box-shadow: 0 6px 18px -6px rgba(0,0,0,.25); cursor: pointer; }
-  .rec svg { width: 18px; height: 18px; }
-  .rec input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
-  .photo.has .rec, .photo.vid .rec { display: none; }
-  .photo .clear { position: absolute; top: 12px; left: 12px; z-index: 4; background: rgba(22,20,15,.72); color: #fff; border: 0; width: 32px; height: 32px; border-radius: 50%; display: none; cursor: pointer; font-size: 14px; backdrop-filter: blur(6px); }
+  .photo .clear { position: absolute; top: 10px; left: 10px; z-index: 4; background: rgba(22,20,15,.72); color: #fff; border: 0; width: 28px; height: 28px; border-radius: 50%; display: none; cursor: pointer; font-size: 13px; backdrop-filter: blur(6px); }
   .photo.has .clear, .photo.vid .clear { display: grid; place-items: center; }
+  .photo .tag { position: absolute; bottom: 8px; right: 8px; z-index: 4; display: none; padding: 4px 9px; border-radius: 999px; background: rgba(22,20,15,.6); color: #fff; font-size: 12px; backdrop-filter: blur(6px); }
+  .photo.vid .tag { display: block; }
 
-  .write { padding: 20px 22px 20px; }
+  .write { padding: 12px 6px 0; }
   .hand { font-family: "Hand", "Swiss", cursive; color: var(--pen); background: transparent; border: 0; outline: none; width: 100%; -webkit-appearance: none; border-radius: 0; display: block; }
   .hand::placeholder { color: rgba(31,45,90,.28); }
-  .msg { font-size: 24px; line-height: 1.45; min-height: 70px; max-height: 30svh; resize: none; overflow: auto; }
-  .name { font-size: 22px; line-height: 1.3; margin-top: 8px; text-align: left; direction: rtl; }
+  .msg { font-size: 21px; line-height: 1.45; min-height: 62px; max-height: 26svh; resize: none; overflow: auto; }
+  .name { font-size: 19px; line-height: 1.3; margin-top: 4px; text-align: left; }
   .name::placeholder { text-align: left; }
 
-  .send { margin: 16px 0 0; width: 100%; height: 50px; background: var(--ink); color: #fff; border: 0; border-radius: 999px; font-size: 16px; font-weight: 500; cursor: pointer; transition: opacity .2s, transform .3s var(--ease); }
+  .send { margin: 12px 0 0; width: 100%; height: 46px; background: transparent; color: var(--ink); border: 1.5px solid rgba(22,20,15,.22); border-radius: 999px; font-size: 14px; font-weight: 500; cursor: pointer;
+          transition: background .3s, color .3s, border-color .3s, transform .3s var(--ease); }
+  .send.ready { background: var(--ink); color: #fff; border-color: var(--ink); }
   .send:active { transform: scale(.98); }
   .send[disabled] { opacity: .45; cursor: default; }
+  /* first: how would you like to bless? */
+  .ask { padding: 18px 8px 8px; }
+  .ask h2 { font-family: "Hand", cursive; font-weight: 400; color: var(--pen); font-size: 30px; text-align: center; }
+  .ask p { text-align: center; font-size: 13px; color: var(--soft); margin-top: 2px; }
+  .ways { display: grid; gap: 8px; margin-top: 18px; }
+  .ways label, .ways button { position: relative; display: flex; align-items: center; gap: 12px; height: 56px; padding: 0 8px 0 18px; border-radius: 999px; background: #f6f4ef; border: 0; text-align: right; font-size: 15px; font-weight: 500; cursor: pointer; transition: transform .25s var(--ease), background .25s; width: 100%; }
+  .ways label:active, .ways button:active { transform: scale(.98); background: #efece5; }
+  .ways i { flex: none; width: 40px; height: 40px; border-radius: 50%; background: #fff; display: grid; place-items: center; }
+  .ways svg { width: 20px; height: 20px; }
+  .ways small { display: block; font-size: 12px; font-weight: 400; color: var(--soft); margin-top: 1px; }
+  .ways input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+  .card.step2 .ask { display: none; }
+  .card:not(.step2) .photo, .card:not(.step2) .write { display: none; }
+  .card.text .photo { display: none; }
+  .back { display: block; margin: 10px auto 0; background: none; border: 0; font-size: 12px; color: var(--soft); cursor: pointer; }
   .err { color: #b3261e; font-size: 13px; margin-top: 10px; text-align: center; }
   .err:empty { display: none; }
 
-  .done { display: none; text-align: center; padding: 56px 26px 44px; }
-  .done h2 { font-family: "Hand", cursive; font-weight: 400; color: var(--pen); font-size: 60px; }
-  .done p { margin-top: 6px; font-size: 16px; color: var(--soft); }
+  .done { display: none; text-align: center; padding: 48px 16px 36px; }
+  .done h2 { font-family: "Hand", cursive; font-weight: 400; color: var(--pen); font-size: 56px; }
+  .done p { margin-top: 6px; font-size: 15px; color: var(--soft); }
   .sent form { display: none; } .sent .done { display: block; }
 </style>
 </head>
 <body>
 <div class="stack"><div class="card">
 <form id="f" novalidate>
+  <div class="ask">
+    <h2>איך תרצו לברך?</h2>
+    <p>ברכה קצרה למטר, לספר שלו</p>
+    <div class="ways">
+      <button type="button" id="wText"><i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 7h14M5 12h9M5 17h12"/></svg></i><span>במילים<small>כמה שורות בכתב יד</small></span></button>
+      <label><input type="file" id="pic" accept="image/*"><i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="18" height="13" rx="4"/><circle cx="12" cy="12.5" r="3.5"/><path d="M8.5 6l1.2-2h4.6l1.2 2"/></svg></i><span>עם תמונה<small>שלכם עם מטר</small></span></label>
+      <label><input type="file" id="cam" accept="video/*" capture="user"><i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="13" height="12" rx="4"/><path d="M16 11l5-3v8l-5-3"/></svg></i><span>בוידאו<small>צילום קצר, עד דקה</small></span></label>
+    </div>
+  </div>
   <div class="photo" id="drop">
-    <input type="file" id="file" accept="image/*,video/*">
+    <input type="file" id="file" accept="image/*,video/*" tabindex="-1">
     <div class="hint">
       <svg viewBox="0 0 150 150" fill="none" stroke="#1f2d5a" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-        <!-- you -->
         <circle cx="60" cy="58" r="13"/>
         <path d="M34 112c0-18 11-29 26-29s26 11 26 29"/>
-        <!-- matar, a head shorter, leaning in -->
         <circle cx="97" cy="72" r="10.5"/>
         <path d="M78 112c0-14 8-23 19-23s19 9 19 23"/>
-        <!-- plus -->
-        <circle cx="118" cy="36" r="13" fill="#16140f" stroke="none"/>
-        <path d="M118 30v12M112 36h12" stroke="#fff" stroke-width="2.4"/>
       </svg>
-      <span>תמונה או וידאו שלכם עם מטר</span>
+      <span>אתם ומטר</span>
     </div>
     <img id="preview" alt="">
-    <video id="vprev" muted loop playsinline></video>
-    <label class="rec" id="rec"><input type="file" id="cam" accept="video/*" capture="user"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="5" width="11" height="10" rx="2.5"/><path d="M13.5 9l4-2.5v7l-4-2.5"/></svg>צלמו ברכה</label>
-    <button type="button" class="clear" id="clear" aria-label="הסרת תמונה">✕</button>
+    <video id="vprev" muted loop playsinline autoplay preload="auto"></video>
+    <span class="tag">וידאו</span>
+    <button type="button" class="clear" id="clear" aria-label="הסרה">✕</button>
   </div>
 
   <div class="write">
@@ -108,6 +132,7 @@
     <input class="hand name" type="text" id="name" maxlength="60" autocomplete="name" placeholder="— השם שלכם" required>
     <p class="err" id="err"></p>
     <button class="send" id="send" type="submit">שליחת הברכה</button>
+    <button class="back" id="back" type="button">חזרה</button>
   </div>
 </form>
 
@@ -122,11 +147,17 @@
   const SB = "https://rjtuakbvpfookqutbych.supabase.co", KEY = "sb_publishable_HhbL6xXv99EtHFn00yRfSA_w9mLKOhr";
   const H = { apikey: KEY, Authorization: "Bearer " + KEY };
   const $ = (id) => document.getElementById(id);
-  const msg = $("msg"), file = $("file"), cam = $("cam"), drop = $("drop"), preview = $("preview"), vprev = $("vprev"), err = $("err"), send = $("send");
+  const msg = $("msg"), file = $("file"), pic = $("pic"), cam = $("cam"), drop = $("drop"), preview = $("preview"), vprev = $("vprev"), err = $("err"), send = $("send");
   let blob = null, vid = null;   // photo (or video poster) jpeg, and the video file
   const MAXV = 45 * 1024 * 1024;
+  const card = document.querySelector(".card"), nameEl = $("name");
+  const step2 = (kind) => { card.classList.add("step2"); card.classList.toggle("text", kind === "text"); if (kind === "text") setTimeout(() => msg.focus(), 50); ready(); };
+  const ready = () => send.classList.toggle("ready", !!(nameEl.value.trim() && msg.value.trim()));
+  $("wText").addEventListener("click", () => step2("text"));
+  $("back").addEventListener("click", () => { card.classList.remove("step2", "text"); $("clear").click(); });
+  nameEl.addEventListener("input", ready);
 
-  msg.addEventListener("input", () => { msg.style.height = "auto"; msg.style.height = msg.scrollHeight + "px"; });
+  msg.addEventListener("input", () => { msg.style.height = "auto"; msg.style.height = msg.scrollHeight + "px"; ready(); });
 
   // shrink the photo on the phone before upload (max 1600px, jpeg)
   async function shrink(f) {
@@ -141,17 +172,26 @@
   // a video: show it, and grab its first frame as the picture for the book page
   async function takeVideo(f) {
     if (f.size > MAXV) throw new Error("big");
-    const url = URL.createObjectURL(f);
-    vprev.src = url; await new Promise((res, rej) => { vprev.onloadeddata = res; vprev.onerror = rej; });
-    try { vprev.currentTime = Math.min(.6, (vprev.duration || 1) / 3); await new Promise((res) => { vprev.onseeked = res; setTimeout(res, 1200); }); } catch (e) {}
-    const k = Math.min(1, 1200 / Math.max(vprev.videoWidth, vprev.videoHeight));
-    const c = document.createElement("canvas"); c.width = Math.round(vprev.videoWidth * k) || 720; c.height = Math.round(vprev.videoHeight * k) || 1280;
-    c.getContext("2d").drawImage(vprev, 0, 0, c.width, c.height);
-    blob = await new Promise((res) => c.toBlob(res, "image/jpeg", .85));
-    vid = f; vprev.play().catch(() => {}); drop.classList.add("vid");
+    vid = f; blob = null;
+    vprev.src = URL.createObjectURL(f); vprev.load(); drop.classList.add("vid");
+    vprev.play().catch(() => {});
+    // the first frame becomes the picture on the book page (best effort; iOS only decodes once it plays)
+    const frame = () => new Promise((res) => {
+      const done = () => { try {
+        if (!vprev.videoWidth) return res();
+        const k = Math.min(1, 1200 / Math.max(vprev.videoWidth, vprev.videoHeight));
+        const c = document.createElement("canvas"); c.width = Math.round(vprev.videoWidth * k); c.height = Math.round(vprev.videoHeight * k);
+        c.getContext("2d").drawImage(vprev, 0, 0, c.width, c.height);
+        c.toBlob((b) => { if (vid === f) blob = b; res(); }, "image/jpeg", .85);
+      } catch (e) { res(); } };
+      const t = setTimeout(done, 2500);
+      vprev.addEventListener("timeupdate", function h() { if (vprev.currentTime > .3) { vprev.removeEventListener("timeupdate", h); clearTimeout(t); done(); } });
+    });
+    await frame();
   }
   async function take(f) {
     err.textContent = ""; if (!f) return;
+    step2("media");
     try {
       if (f.type.startsWith("video/")) await takeVideo(f);
       else { blob = await shrink(f); vid = null; preview.src = URL.createObjectURL(blob); drop.classList.add("has"); }
@@ -161,8 +201,9 @@
     }
   }
   file.addEventListener("change", () => take(file.files[0]));
+  pic.addEventListener("change", () => take(pic.files[0]));
   cam.addEventListener("change", () => take(cam.files[0]));
-  $("clear").addEventListener("click", (e) => { e.preventDefault(); e.stopPropagation(); blob = null; vid = null; file.value = ""; cam.value = ""; vprev.pause(); vprev.removeAttribute("src"); drop.classList.remove("has", "vid"); });
+  $("clear").addEventListener("click", (e) => { e.preventDefault(); e.stopPropagation(); blob = null; vid = null; file.value = ""; pic.value = ""; cam.value = ""; vprev.pause(); vprev.removeAttribute("src"); drop.classList.remove("has", "vid"); card.classList.remove("step2", "text"); });
 
   $("f").addEventListener("submit", async (e) => {
     e.preventDefault(); err.textContent = "";
