@@ -8,7 +8,7 @@ const $ = (id) => document.getElementById(id);
 
 // ---------- look ----------
 const CLOTH = "#FFCF1A", INKL = "#16140f", SUBL = "rgba(22,20,15,.62)", FONT = "Swiss";
-const W = 1, H = 1.38, CW = 1.035, CH = 1.42, GAP = .022;
+const W = 1, H = 1.38, CW = W + .04, CH = H + .04, GAP = .022;   // the boards overhang the pages by .02 all round
 const TEX_W = 1024, TEX_H = Math.round(TEX_W * CH / CW);
 const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
 const ease = (x) => x < .5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2;
@@ -299,6 +299,10 @@ function place(L, p) {
 const blockMat = new THREE.MeshStandardMaterial({ color: 0xf1ede4, roughness: 1 });
 const blockA = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), blockMat), blockB = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), blockMat);
 blockA.castShadow = blockB.castShadow = true; book.add(blockA, blockB);
+// a thin dark mat on top of each stack, so the open spread has the same dark rim on both sides
+const matMat = new THREE.MeshStandardMaterial({ color: 0x232220, roughness: .95 });
+const matA = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), matMat), matB = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), matMat);
+matA.receiveShadow = matB.receiveShadow = true; book.add(matA, matB);
 function layBlocks() {
   const n = leaves.length, k = leaves.filter((L) => L.p >= .5).length;    // k leaves lie on the turned side
   const un = n - k;
@@ -306,6 +310,8 @@ function layBlocks() {
   const E = .004;   // keep the block just under the top leaf and just above the bottom one
   const setB = (m, count, side) => { const th = Math.max(0, count - 1) * gapNow - 2 * E; m.visible = th > .001; m.scale.set(CW - .008, CH - .01, Math.max(th, .001)); m.position.set(side * (CW - .008) / 2, 0, (count + 1) / 2 * gapNow); };
   setB(blockA, un, S); setB(blockB, k, -S);
+  const setM = (m, count, side) => { m.visible = count > 0; m.scale.set(CW - .006, CH - .006, 1); m.position.set(side * (CW - .006) / 2, 0, count * gapNow - .002); };
+  setM(matA, un, S); setM(matB, k, -S);
 }
 // the spine, seen while the book is closed
 const spine = new THREE.Mesh(new THREE.BoxGeometry(.012, CH, 1), new THREE.MeshStandardMaterial({ color: 0xF2B030, roughness: .8 }));
