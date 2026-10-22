@@ -8,7 +8,7 @@
 <meta property="og:title" content="ברכה למטר">
 <meta property="og:description" content="הוסיפו ברכה ותמונה לספר הבר מצווה של מטר">
 <meta property="og:image" content="../poster.jpg">
-<meta name="theme-color" content="#FFD24A">
+<meta name="theme-color" content="#f3f1ec">
 <link rel="icon" href="../icon.svg" type="image/svg+xml">
 <link rel="icon" href="../favicon-32.png" sizes="32x32" type="image/png">
 <link rel="apple-touch-icon" href="../apple-touch-icon.png">
@@ -22,16 +22,16 @@
 
   :root { --ink: #16140f; --pen: #1f2d5a; --soft: #9a948a; --ease: cubic-bezier(.22, 1, .36, 1); }
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  html { background: #FFC83A; }
+  html { background: #f3f1ec; }
   body { font-family: "Swiss", system-ui, sans-serif; color: var(--ink); -webkit-font-smoothing: antialiased; min-height: 100svh; display: grid; place-items: center; padding: 20px 16px;
-         background: linear-gradient(160deg, #FFE27A, #FFC83A 55%, #F4A62A); }
+         background: radial-gradient(90% 70% at 85% 0%, rgba(255,210,74,.35), transparent 60%), radial-gradient(70% 60% at 0% 100%, rgba(244,166,42,.18), transparent 60%), linear-gradient(160deg, #f8f7f3, #efece5); }
   button, input, textarea { font: inherit; color: inherit; }
 
   /* a greeting card: big photo on top, a few handwritten lines below */
   .card { width: min(400px, 100%); background: #fff; border-radius: 32px; overflow: hidden; position: relative;
-          box-shadow: 0 40px 70px -30px rgba(90, 50, 0, .55), 0 1px 0 rgba(255,255,255,.6) inset; }
+          box-shadow: 0 40px 70px -34px rgba(40, 30, 10, .35), 0 0 0 1px rgba(0,0,0,.03); }
 
-  .photo { position: relative; aspect-ratio: 1 / 1; background: linear-gradient(150deg, #FFE9A3, #FFD35A 60%, #F7B043); cursor: pointer; overflow: hidden; }
+  .photo { position: relative; aspect-ratio: 1 / 1; background: linear-gradient(150deg, #f6f4ee, #ebe7dd); cursor: pointer; overflow: hidden; }
   .photo input { position: absolute; inset: 0; opacity: 0; cursor: pointer; z-index: 3; }
   .photo .hint { position: absolute; inset: 0; display: grid; place-items: center; text-align: center; transition: opacity .3s; }
   .photo .hint svg { width: 150px; height: 150px; }
