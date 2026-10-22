@@ -30,26 +30,25 @@ function canvasFor(mirror) {
   const g = c.getContext("2d"); if (mirror) { g.translate(TEX_W, 0); g.scale(-1, 1); }
   return [c, g];
 }
+// the cover: a warm gradient that slowly drifts, like light moving over cloth (cheap enough to redraw live)
 const clothCache = {};
-function cloth(g, w, h) {
-  const key = w + "x" + h;
-  if (!clothCache[key]) { const c = document.createElement("canvas"); c.width = w; c.height = h; clothDraw(c.getContext("2d"), w, h); clothCache[key] = c; }
-  g.drawImage(clothCache[key], 0, 0);
+function cloth(g, w, h, t = 0) {
+  if (!t) { const key = w + "x" + h; if (!clothCache[key]) { const c = document.createElement("canvas"); c.width = w; c.height = h; clothDraw(c.getContext("2d"), w, h, 0); clothCache[key] = c; } g.drawImage(clothCache[key], 0, 0); return; }
+  clothDraw(g, w, h, t);
 }
-function clothDraw(g, w, h) {
-  // a soft warm gradient (light yellow → amber), with a faint highlight at the top
-  const gr = g.createLinearGradient(0, 0, w, h);
-  gr.addColorStop(0, "#FFE27A"); gr.addColorStop(.5, "#FFC83A"); gr.addColorStop(1, "#F4A62A");
+function clothDraw(g, w, h, t) {
+  const a = t * .12, cx = w * (.5 + .45 * Math.cos(a)), cy = h * (.5 + .45 * Math.sin(a * .8));
+  const gr = g.createLinearGradient(w * (.5 - .5 * Math.cos(a * .7)), 0, w * (.5 + .5 * Math.cos(a * .7)), h);
+  gr.addColorStop(0, "#FFE27A"); gr.addColorStop(.45, "#FFC83A"); gr.addColorStop(1, "#F4A62A");
   g.fillStyle = gr; g.fillRect(0, 0, w, h);
+  // two soft pools of colour wandering across the board: peach and a touch of rose
+  const p1 = g.createRadialGradient(cx, cy, 0, cx, cy, w * .7); p1.addColorStop(0, "rgba(255,150,110,.45)"); p1.addColorStop(1, "rgba(255,150,110,0)");
+  g.fillStyle = p1; g.fillRect(0, 0, w, h);
+  const qx = w * (.5 - .4 * Math.sin(a * 1.3)), qy = h * (.5 - .4 * Math.cos(a)); const p2 = g.createRadialGradient(qx, qy, 0, qx, qy, w * .6); p2.addColorStop(0, "rgba(255,230,160,.6)"); p2.addColorStop(1, "rgba(255,230,160,0)");
+  g.fillStyle = p2; g.fillRect(0, 0, w, h);
   const hi = g.createRadialGradient(w * .3, h * .1, 0, w * .3, h * .1, w * .9);
-  hi.addColorStop(0, "rgba(255,255,255,.22)"); hi.addColorStop(1, "rgba(255,255,255,0)");
+  hi.addColorStop(0, "rgba(255,255,255,.2)"); hi.addColorStop(1, "rgba(255,255,255,0)");
   g.fillStyle = hi; g.fillRect(0, 0, w, h);
-  const id = g.getImageData(0, 0, w, h), d = id.data;
-  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {          // fine linen weave
-    const i = (y * w + x) * 4, n = (Math.random() - .5) * 9 + ((x % 3 === 0) ? 2.5 : 0) + ((y % 3 === 0) ? -2.5 : 0);
-    d[i] += n; d[i + 1] += n; d[i + 2] += n;
-  }
-  g.putImageData(id, 0, 0);
 }
 function txt(g, s, x, y, size, weight = 400, color = INKL, align = "start", track = 0) {
   g.save(); g.font = `${weight} ${size}px "${FONT}"`; g.fillStyle = color; g.direction = T.dir; g.textAlign = align; g.textBaseline = "alphabetic";
@@ -91,7 +90,7 @@ async function faces() {
   const slots = [6, 18, 58, 86, 114, 146].map((k) => ({ im: IMG[k], next: null, t0: 0 }));
   let lastSwap = 0;
   const front = (g, w, h, t = 0) => {
-    cloth(g, w, h);
+    cloth(g, w, h, t);
     txt(g, T.label, sx(w), M + 30, 30, 400, SUBL);
     g.font = `500 150px "${FONT}"`; const tw = Math.max(g.measureText(T.name + ",").width, g.measureText(T.sub + ".").width);
     const ts = Math.min(150, 150 * (w - 2 * M) / (tw + 20));

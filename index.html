@@ -3,9 +3,9 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>מטר</title>
+<title>מטר · בר מצווה</title>
 <meta name="description" content="תראו אותו גדל.">
-<meta property="og:title" content="מטר">
+<meta property="og:title" content="מטר · בר מצווה">
 <meta property="og:description" content="תראו אותו גדל.">
 <meta property="og:image" content="poster.jpg">
 <meta name="theme-color" content="#ffffff">
@@ -42,11 +42,22 @@
   .playing #watch .ic-pause { display: block; }
 
   /* stage */
-  #book { position: fixed; top: var(--bar); bottom: 48px; inset-inline: 0; opacity: 0; transition: opacity 1.4s var(--ease); }
+  /* colour behind the book: soft pools of light that keep drifting */
+  .glow { position: fixed; inset: 0; overflow: hidden; pointer-events: none; z-index: 0; }
+  .glow i { position: absolute; width: 60vmax; height: 60vmax; border-radius: 50%; filter: blur(90px); opacity: .55; mix-blend-mode: multiply; will-change: transform; }
+  .glow .a { background: #FFE27A; left: -15vmax; top: -10vmax; animation: drift1 26s ease-in-out infinite alternate; }
+  .glow .b { background: #FFC2B0; right: -20vmax; top: 10vmax; animation: drift2 31s ease-in-out infinite alternate; }
+  .glow .c { background: #CFE0FF; left: 20vmax; bottom: -30vmax; animation: drift3 37s ease-in-out infinite alternate; }
+  .glow .d { background: #D6F3E3; right: 10vmax; bottom: -20vmax; animation: drift1 29s ease-in-out infinite alternate-reverse; }
+  @keyframes drift1 { to { transform: translate(28vmax, 18vmax) scale(1.15); } }
+  @keyframes drift2 { to { transform: translate(-26vmax, 22vmax) scale(.9); } }
+  @keyframes drift3 { to { transform: translate(18vmax, -26vmax) scale(1.2); } }
+  .full .glow, .tv .glow { display: none; }
+  #book { position: fixed; top: var(--bar); bottom: 48px; inset-inline: 0; opacity: 0; transition: opacity 1.4s var(--ease); z-index: 1; }
   .ready #book { opacity: 1; }
   #book canvas { display: block; touch-action: none; }
 
-  .arrow { position: fixed; top: calc(50% + 14px); transform: translateY(-50%); width: 40px; height: 40px; border: 1px solid #d6d6d6; display: grid; place-items: center; background: #fff; transition: opacity .5s var(--ease), border-color .25s; z-index: 4; }
+  .arrow { position: fixed; top: calc(50% + 14px); transform: translateY(-50%); width: 40px; height: 40px; border: 1px solid #d6d6d6; display: grid; place-items: center; background: rgba(255,255,255,.8); transition: opacity .5s var(--ease), border-color .25s; z-index: 4; }
   .arrow:hover { border-color: var(--ink); }
   .arrow svg { width: 16px; height: 16px; }
   .arrow.l { left: 24px; } .arrow.r { right: 24px; }
@@ -111,11 +122,11 @@
 </style>
 </head>
 <body data-state="front">
-<div class="loader" aria-hidden="true"><div class="lb"><i class="l"></i><i class="r"></i><i class="f"></i></div><span>מטר</span></div>
+<div class="loader" aria-hidden="true"><div class="lb"><i class="l"></i><i class="r"></i><i class="f"></i></div><span>מטר · בר מצווה</span></div>
 <header>
   <div class="brand">
     <svg viewBox="0 0 28 28" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"><path d="M6 7.5h13v16H6z"/><path d="M6 7.5 9 4.5h13v16l-3 3"/><path d="M19 7.5l3-3"/><path d="M8.2 5.3h13M7.4 6.1h13" stroke-width="1" opacity=".55"/></svg>
-    <span>מטר</span>
+    <span>מטר · בר מצווה</span>
   </div>
   <nav class="tools">
     <button class="b icon" id="full" aria-label="מסך מלא"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M2 6V2h4M10 2h4v4M14 10v4h-4M6 14H2v-4"/></svg></button>
@@ -124,7 +135,8 @@
   </nav>
 </header>
 
-<div id="book" aria-label="מטר"></div>
+<div class="glow" aria-hidden="true"><i class="a"></i><i class="b"></i><i class="c"></i><i class="d"></i></div>
+<div id="book" aria-label="מטר · בר מצווה"></div>
 
 <button class="arrow l" id="left" aria-label="left"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M10 3 5 8l5 5"/></svg></button>
 <button class="arrow r" id="right" aria-label="right"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="m6 3 5 5-5 5"/></svg></button>
@@ -153,6 +165,6 @@
 
 <script>window.BOOK = {"name": "מטר", "sub": "תראו אותו גדל", "label": "בר מצווה", "credit": "באהבה, אמא, אבא, מידן ואייר", "line1": "שלוש עשרה שנים. סרטון אחד.", "story": "הוא הגיע אלינו קטן, גדל בבריכות, בנחלים ועל טרמפולינות, מוקף באנשים שאוהבים אותו. ועכשיו הוא בן שלוש עשרה.", "next": "לסרטון", "blurbLabel": "תקציר", "blurb": "מהבטן של אמא, דרך המגבת האדומה, הבריכות, הנחלים והטרמפולינות, ועד היום שבו הוא עולה לתורה. כל התמונות שצילמנו לאורך השנים חוזרות לחיים, בסרטון אחד.", "bless": [{"label": "מאמא ואבא", "title": "מטר שלנו,", "body": "שלוש עשרה שנים שאנחנו מסתכלים עליך גדל, ומתרגשים מחדש כל יום. אתה סקרן, מצחיק, אמיץ ועם לב ענק. תמשיך לטפס גבוה, לשאול שאלות ולהיות בדיוק מי שאתה. אנחנו תמיד פה, מאחוריך.", "sign": "מזל טוב, אמא ואבא"}, {"label": "ממידן", "title": "מטר,", "photo": "f/72.jpg", "body": "אתה האח הכי טוב בעולם. תודה שאתה משחק איתי ומצחיק אותי. אני אוהב אותך המון.", "sign": "מזל טוב, מידן"}, {"label": "מאייר", "title": "אחי,", "photo": "d/01.jpg", "body": "אחי הקטן כבר לא כל כך קטן. תודה על כל הצחוקים, המשחקים והריבים שנגמרים בצחוק. אני גאה בך ותמיד אהיה בשבילך.", "sign": "מזל טוב, אייר"}], "duo": "מטר ואייר", "fromLabel": "ברכה מאת", "inviteLabel": "ספר הברכות", "invite1": "גם אתם", "invite2": "רוצים לברך?", "inviteUrl": "danor.studio/matar/add", "again": "לצפייה שוב", "p_front": "כריכה", "p_page": "עמוד 1", "p_back": "תקציר", "dir": "rtl", "base": "", "play": "לצפייה בסרטון", "pause": "השהיית הסרטון"};</script>
 <script src="lib/hls.min.js"></script>
-<script type="module" src="book.js?v=1792675105"></script>
+<script type="module" src="book.js?v=1792676047"></script>
 </body>
 </html>

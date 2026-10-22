@@ -42,11 +42,22 @@
   .playing #watch .ic-pause { display: block; }
 
   /* stage */
-  #book { position: fixed; top: var(--bar); bottom: 48px; inset-inline: 0; opacity: 0; transition: opacity 1.4s var(--ease); }
+  /* colour behind the book: soft pools of light that keep drifting */
+  .glow { position: fixed; inset: 0; overflow: hidden; pointer-events: none; z-index: 0; }
+  .glow i { position: absolute; width: 60vmax; height: 60vmax; border-radius: 50%; filter: blur(90px); opacity: .55; mix-blend-mode: multiply; will-change: transform; }
+  .glow .a { background: #FFE27A; left: -15vmax; top: -10vmax; animation: drift1 26s ease-in-out infinite alternate; }
+  .glow .b { background: #FFC2B0; right: -20vmax; top: 10vmax; animation: drift2 31s ease-in-out infinite alternate; }
+  .glow .c { background: #CFE0FF; left: 20vmax; bottom: -30vmax; animation: drift3 37s ease-in-out infinite alternate; }
+  .glow .d { background: #D6F3E3; right: 10vmax; bottom: -20vmax; animation: drift1 29s ease-in-out infinite alternate-reverse; }
+  @keyframes drift1 { to { transform: translate(28vmax, 18vmax) scale(1.15); } }
+  @keyframes drift2 { to { transform: translate(-26vmax, 22vmax) scale(.9); } }
+  @keyframes drift3 { to { transform: translate(18vmax, -26vmax) scale(1.2); } }
+  .full .glow, .tv .glow { display: none; }
+  #book { position: fixed; top: var(--bar); bottom: 48px; inset-inline: 0; opacity: 0; transition: opacity 1.4s var(--ease); z-index: 1; }
   .ready #book { opacity: 1; }
   #book canvas { display: block; touch-action: none; }
 
-  .arrow { position: fixed; top: calc(50% + 14px); transform: translateY(-50%); width: 40px; height: 40px; border: 1px solid #d6d6d6; display: grid; place-items: center; background: #fff; transition: opacity .5s var(--ease), border-color .25s; z-index: 4; }
+  .arrow { position: fixed; top: calc(50% + 14px); transform: translateY(-50%); width: 40px; height: 40px; border: 1px solid #d6d6d6; display: grid; place-items: center; background: rgba(255,255,255,.8); transition: opacity .5s var(--ease), border-color .25s; z-index: 4; }
   .arrow:hover { border-color: var(--ink); }
   .arrow svg { width: 16px; height: 16px; }
   .arrow.l { left: 24px; } .arrow.r { right: 24px; }
@@ -124,6 +135,7 @@
   </nav>
 </header>
 
+<div class="glow" aria-hidden="true"><i class="a"></i><i class="b"></i><i class="c"></i><i class="d"></i></div>
 <div id="book" aria-label="{{title}}"></div>
 
 <button class="arrow l" id="left" aria-label="left"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M10 3 5 8l5 5"/></svg></button>
