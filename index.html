@@ -91,6 +91,12 @@
   .full.quiet .arrow { opacity: 0; pointer-events: none; }
   .full.quiet #book canvas { cursor: none; }
   /* loading: a small book whose pages keep turning, until the real one is ready */
+  .lock { position: fixed; inset: 0; z-index: 30; background: linear-gradient(135deg, #FFE27A, #FFC83A 50%, #F4A62A); display: grid; place-items: center; text-align: center; padding: 24px; }
+  .lock small { font-size: 14px; opacity: .65; }
+  .lock h1 { font-weight: 600; font-size: clamp(40px, 9vw, 72px); line-height: 1.05; letter-spacing: -.02em; margin: 16px 0 14px; }
+  .lock p { font-size: 17px; line-height: 1.5; max-width: 26em; margin: 0 auto 28px; }
+  .lock .b { display: inline-block; height: auto; padding: 14px 26px; background: #16140f; color: #fff; border: 0; text-decoration: none; font-size: 17px; }
+  .locked header, .locked footer, .locked .glow, .locked .loader, .locked #book { display: none; }
   .loader { position: fixed; inset: 0; z-index: 20; background: #fff; display: grid; place-items: center; transition: opacity .6s var(--ease), visibility 0s linear .6s; }
   .ready .loader { opacity: 0; visibility: hidden; }
   .lb { position: relative; width: 72px; height: 48px; perspective: 420px; }
@@ -165,8 +171,30 @@
 
 <video id="film" playsinline preload="auto" poster="poster.jpg"></video>
 
+<div class="lock" id="lock" hidden>
+  <div>
+    <small>מטר · בר מצווה</small>
+    <h1>הספר עוד סגור.</h1>
+    <p>ספר הבר מצווה של מטר ייפתח ב־29.10. עד אז אפשר כבר לכתוב לו ברכה ולהוסיף תמונה, והיא תחכה לו בפנים.</p>
+    <a class="b" href="add/">הוסיפו ברכה</a>
+  </div>
+</div>
+<script>
+(() => {
+  // the book stays closed to guests until the bar mitzvah; the blessing page is open.
+  // Danor opens it early with ?peek=OPEN_KEY (remembered on that device), and ?lock resets it.
+  const LAUNCH = new Date("2026-10-29T17:00:00+03:00"), q = new URLSearchParams(location.search);
+  if (q.has("lock")) localStorage.removeItem("peek");
+  if (q.get("peek") === "danor") localStorage.setItem("peek", "1");
+  if (Date.now() < LAUNCH && localStorage.getItem("peek") !== "1") {
+    document.getElementById("lock").hidden = false; document.body.classList.add("locked");
+    const s = document.querySelector('script[src$="book.js?v=1792677718"], script[type=module]'); if (s) s.remove();
+    window.LOCKED = true;
+  }
+})();
+</script>
 <script>window.BOOK = {"name": "מטר", "sub": "תראו אותו גדל", "label": "בר מצווה", "credit": "באהבה, אמא, אבא, מידן ואייר", "line1": "שלוש עשרה שנים. סרטון אחד.", "story": "הוא הגיע אלינו קטן, גדל בבריכות, בנחלים ועל טרמפולינות, מוקף באנשים שאוהבים אותו. ועכשיו הוא בן שלוש עשרה.", "next": "לסרטון", "blurbLabel": "תקציר", "blurb": "מהבטן של אמא, דרך המגבת האדומה, הבריכות, הנחלים והטרמפולינות, ועד היום שבו הוא עולה לתורה. כל התמונות שצילמנו לאורך השנים חוזרות לחיים, בסרטון אחד.", "bless": [{"label": "מאמא ואבא", "title": "מטר שלנו,", "body": "שלוש עשרה שנים שאנחנו מסתכלים עליך גדל, ומתרגשים מחדש כל יום. אתה סקרן, מצחיק, אמיץ ועם לב ענק. תמשיך לטפס גבוה, לשאול שאלות ולהיות בדיוק מי שאתה. אנחנו תמיד פה, מאחוריך.", "sign": "מזל טוב, אמא ואבא"}, {"label": "ממידן", "title": "מטר,", "photo": "f/72.jpg", "body": "אתה האח הכי טוב בעולם. תודה שאתה משחק איתי ומצחיק אותי. אני אוהב אותך המון.", "sign": "מזל טוב, מידן"}, {"label": "מאייר", "title": "אחי,", "photo": "d/01.jpg", "body": "אחי הקטן כבר לא כל כך קטן. תודה על כל הצחוקים, המשחקים והריבים שנגמרים בצחוק. אני גאה בך ותמיד אהיה בשבילך.", "sign": "מזל טוב, אייר"}], "duo": "מטר ואייר", "fromLabel": "ברכה מאת", "inviteLabel": "ספר הברכות", "invite1": "גם אתם", "invite2": "רוצים לברך?", "inviteUrl": "danor.studio/matar/add", "again": "לצפייה שוב", "p_front": "כריכה", "p_page": "עמוד 1", "p_back": "תקציר", "dir": "rtl", "base": "", "play": "לצפייה בסרטון", "pause": "השהיית הסרטון"};</script>
 <script src="lib/hls.min.js"></script>
-<script type="module" src="book.js?v=1792676788"></script>
+<script type="module" src="book.js?v=1792677718"></script>
 </body>
 </html>

@@ -91,14 +91,15 @@
   <div>
     <h2>תודה!</h2>
     <p>הברכה שלכם נכנסה לספר של מטר.</p>
-    <a href="../">לספר</a>
+    <a href="../" id="toBook">לספר</a>
   </div>
 </section>
 
-<footer><a href="../">מטר · בר מצווה</a></footer>
+<footer><span>מטר · בר מצווה</span></footer>
 
 <script>
 (() => {
+  if (Date.now() < new Date("2026-10-29T17:00:00+03:00")) { const b = document.getElementById("toBook"); b.textContent = "הספר ייפתח ב־29.10"; b.removeAttribute("href"); }
   const SB = "https://rjtuakbvpfookqutbych.supabase.co", KEY = "sb_publishable_HhbL6xXv99EtHFn00yRfSA_w9mLKOhr";
   const H = { apikey: KEY, Authorization: "Bearer " + KEY };
   const $ = (id) => document.getElementById(id);

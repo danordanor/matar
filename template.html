@@ -91,6 +91,12 @@
   .full.quiet .arrow { opacity: 0; pointer-events: none; }
   .full.quiet #book canvas { cursor: none; }
   /* loading: a small book whose pages keep turning, until the real one is ready */
+  .lock { position: fixed; inset: 0; z-index: 30; background: linear-gradient(135deg, #FFE27A, #FFC83A 50%, #F4A62A); display: grid; place-items: center; text-align: center; padding: 24px; }
+  .lock small { font-size: 14px; opacity: .65; }
+  .lock h1 { font-weight: 600; font-size: clamp(40px, 9vw, 72px); line-height: 1.05; letter-spacing: -.02em; margin: 16px 0 14px; }
+  .lock p { font-size: 17px; line-height: 1.5; max-width: 26em; margin: 0 auto 28px; }
+  .lock .b { display: inline-block; height: auto; padding: 14px 26px; background: #16140f; color: #fff; border: 0; text-decoration: none; font-size: 17px; }
+  .locked header, .locked footer, .locked .glow, .locked .loader, .locked #book { display: none; }
   .loader { position: fixed; inset: 0; z-index: 20; background: #fff; display: grid; place-items: center; transition: opacity .6s var(--ease), visibility 0s linear .6s; }
   .ready .loader { opacity: 0; visibility: hidden; }
   .lb { position: relative; width: 72px; height: 48px; perspective: 420px; }
@@ -165,6 +171,28 @@
 
 <video id="film" playsinline preload="auto" poster="{{base}}poster.jpg"></video>
 
+<div class="lock" id="lock" hidden>
+  <div>
+    <small>{{title}}</small>
+    <h1>{{lock_title}}</h1>
+    <p>{{lock_text}}</p>
+    <a class="b" href="{{base}}add/">{{add}}</a>
+  </div>
+</div>
+<script>
+(() => {
+  // the book stays closed to guests until the bar mitzvah; the blessing page is open.
+  // Danor opens it early with ?peek=OPEN_KEY (remembered on that device), and ?lock resets it.
+  const LAUNCH = new Date("{{launch}}"), q = new URLSearchParams(location.search);
+  if (q.has("lock")) localStorage.removeItem("peek");
+  if (q.get("peek") === "{{peek}}") localStorage.setItem("peek", "1");
+  if (Date.now() < LAUNCH && localStorage.getItem("peek") !== "1") {
+    document.getElementById("lock").hidden = false; document.body.classList.add("locked");
+    const s = document.querySelector('script[src$="book.js"], script[type=module]'); if (s) s.remove();
+    window.LOCKED = true;
+  }
+})();
+</script>
 <script>window.BOOK = {{book_json}};</script>
 <script src="{{base}}lib/hls.min.js"></script>
 <script type="module" src="{{base}}book.js"></script>
