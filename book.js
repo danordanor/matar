@@ -139,12 +139,22 @@ async function faces() {
     });
   } };
   // a blessing page: who it is from, the words, the signature
-  const blessing = (b, onBoard) => ({ kind: "page", draw: (g, w, h) => {
-    if (onBoard) boardPaper(g, w, h); else paper(g, w, h);
+  const blessImgs = await Promise.all(T.bless.map((b) => b.photo ? loadImg(BASE + b.photo) : null));
+  const blessing = (b, im) => ({ kind: "page", draw: (g, w, h) => {
+    paper(g, w, h);
     txt(g, b.label, sx(w), M + 24, 26, 400, GREY);
-    hand(g, b.title, sx(w), M + 190, w - 2 * M, 84, 90);
-    hand(g, b.body, sx(w), M + 310, w - 2 * M, 50, 78, 12);
-    hand(g, b.sign, sx(w), h - M - 10, w - 2 * M, 50, 60);
+    let y = M + 110;
+    if (im) {   // a photo of the two of them, pinned at a slight angle
+      const bw = w - 2 * M, bh = h * .36, k = Math.min(bw / im.width, bh / im.height), pw = im.width * k, ph = im.height * k;
+      g.save(); g.translate(w / 2, y + bh / 2); g.rotate((RTL ? 1.4 : -1.4) * Math.PI / 180);
+      g.shadowColor = "rgba(0,0,0,.16)"; g.shadowBlur = 16; g.shadowOffsetY = 6; g.fillStyle = "#fff"; g.fillRect(-pw / 2 - 12, -ph / 2 - 12, pw + 24, ph + 24);
+      g.shadowColor = "transparent"; g.drawImage(im, -pw / 2, -ph / 2, pw, ph); g.restore();
+      y += bh + 100;
+    } else y += 80;
+    hand(g, b.title, sx(w), y, w - 2 * M, im ? 66 : 84, 90);
+    const lh = im ? 60 : 78, size = im ? 40 : 50, maxLines = Math.floor((h - M - 90 - (y + 90)) / lh);
+    hand(g, b.body, sx(w), y + 100, w - 2 * M, size, lh, maxLines);
+    hand(g, b.sign, sx(w), h - M - 10, w - 2 * M, 46, 60);
   } });
   // Iyar and Matar together: a loose 3 × 3 grid of full photos per page, each gently drifting
   const duoPage = (list, seed) => ({ kind: "page", live: true, draw: (g, w, h, t = 0) => {
@@ -200,8 +210,8 @@ async function faces() {
   // leaf = [front, back]; spread k shows [leaf k-1 back (right), leaf k front (left)]
   return [
     [{ kind: "front", draw: front, hard: true }, scatter],
-    [blessing(parents), blessing(meidan)],
-    [blessing(iyar), duoPage(DUO.slice(0, 9), 1)],
+    [blessing(parents, blessImgs[0]), blessing(meidan, blessImgs[1])],
+    [blessing(iyar, blessImgs[2]), duoPage(DUO.slice(0, 9), 1)],
     [duoPage(DUO.slice(9), 2), { kind: "inner", draw: black }],
     [{ kind: "inner", draw: black, film: true }, after[0]],     // FILM: the video spans this spread
     ...pairs,
@@ -295,12 +305,11 @@ const gutter = new THREE.Mesh(new THREE.PlaneGeometry(.5, H), gutterMat);  book.
 // ---------- state ----------
 // 0 = front cover · 1..FILM-1 = pages · FILM = the film across the spread · END = back cover (the story)
 let state = 0, FILM = 6, END = 7;
-const body = document.body, hint = $("hint");
+const body = document.body;
 const name = (s) => s === 0 ? "front" : s === END ? "back" : s === FILM ? "open" : "pages";
 function go(s, opts = {}) {
   state = clamp(s, 0, END);
   body.dataset.state = name(state); if (strip.children.length) markStrip();
-  hint.textContent = hint.dataset[name(state)] || hint.dataset.open;
   $("left").disabled = RTL ? state === END : state === 0;
   $("right").disabled = RTL ? state === 0 : state === END;
   if (state === FILM) { if (opts.restart || video.ended) video.currentTime = 0; video.play().catch(() => {}); }
@@ -338,7 +347,7 @@ $("left").onclick = () => (RTL ? next() : prev());
 $("right").onclick = () => (RTL ? prev() : next());
 $("openBook").onclick = () => go(1);
 $("closeBook").onclick = () => go(0);
-$("watch").onclick = () => go(FILM, { restart: state !== FILM });
+$("watch").onclick = () => { if (state === FILM) { video.paused ? video.play() : video.pause(); } else go(FILM, { restart: true }); };
 const isFull = () => document.body.classList.contains("full");
 function setFull(on) {
   document.body.classList.toggle("full", on);
@@ -351,8 +360,6 @@ function setFull(on) {
 $("full").onclick = (e) => { e.stopPropagation(); setFull(!isFull()); };
 const fsChange = () => { if (!document.fullscreenElement && !document.webkitFullscreenElement && isFull() && !TV) document.body.classList.remove("full"); };
 document.addEventListener("fullscreenchange", fsChange); document.addEventListener("webkitfullscreenchange", fsChange);
-const wave = $("wave");
-$("mute").onclick = () => { video.muted = !video.muted; wave.style.opacity = video.muted ? 0 : 1; };
 video.addEventListener("ended", () => setTimeout(() => { if (state === FILM) go(FILM + 1); }, 700));
 
 // status bar line: film time when open, place in the book otherwise

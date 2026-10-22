@@ -49,19 +49,19 @@
   .arrow.l { left: 24px; } .arrow.r { right: 24px; }
   .arrow[disabled] { opacity: 0; pointer-events: none; }
 
-  .b.small { height: 28px; padding: 0 10px; font-size: 12px; margin-inline-end: 6px; }
+  .b.small { height: 28px; padding: 0 10px; font-size: 12px; }
   [data-state="open"] .open-ed, [data-state="pages"] .open-ed, [data-state="front"] .close-ed, [data-state="back"] .close-ed { display: none; }
 
   /* status bar */
   footer { position: fixed; bottom: 0; inset-inline: 0; height: 48px; border-top: 1px solid var(--line); display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; padding: 0 20px; font-size: 13px; color: var(--soft); background: #fff; z-index: 5; }
-  footer .hint { display: flex; align-items: center; gap: 10px; }
-  footer .hint::before { content: ""; width: 6px; height: 6px; background: var(--ink); }
-  .strip { display: flex; gap: 6px; justify-self: end; overflow-x: auto; max-width: 100%; padding: 4px 2px; scrollbar-width: none; direction: rtl; touch-action: pan-x; }
+  footer .ctl { justify-self: end; }
+  footer .prog { justify-self: start; }
+  .strip { display: flex; gap: 6px; justify-self: center; overflow-x: auto; max-width: 100%; padding: 4px 2px; scrollbar-width: none; direction: rtl; touch-action: pan-x; }
   .strip::-webkit-scrollbar { display: none; }
-  .strip .pg { display: flex; gap: 1px; padding: 0; border: 1px solid #ddd; background: #fff; cursor: pointer; flex: none; opacity: .55; transition: opacity .2s, border-color .2s; }
+  .strip .pg { display: flex; gap: 1px; padding: 0; border: 1px solid #e2e2e2; outline: 2px solid transparent; outline-offset: 1px; background: #fff; cursor: pointer; flex: none; opacity: .4; transition: opacity .2s, outline-color .2s; }
   .strip .pg canvas { display: block; }
   .strip .pg:hover { opacity: .85; }
-  .strip .pg.on { opacity: 1; border-color: var(--ink); }
+  .strip .pg.on { opacity: 1; border-color: var(--ink); outline-color: var(--ink); }
   .prog { display: flex; align-items: center; gap: 12px; direction: ltr; color: var(--ink); font-variant-numeric: tabular-nums; }
   .prog .track { position: relative; width: min(260px, 32vw); height: 22px; cursor: pointer; }
   .prog .track::before { content: ""; position: absolute; inset-inline: 0; top: 50%; height: 1px; background: #cfcfcf; }
@@ -70,8 +70,10 @@
 
   /* full screen: only the book, a small way out in the corner */
   .full header, .full footer { display: none !important; }
+  .full, .full body { background: #000; }
   .full #book { top: 0; bottom: 0; }
-  .full .arrow { top: 50%; }
+  .full .arrow { top: 50%; background: transparent; border-color: rgba(255,255,255,.18); color: rgba(255,255,255,.5); opacity: .5; }
+  .full .arrow:hover { opacity: 1; border-color: rgba(255,255,255,.5); }
   /* TV mode: only the book, playing by itself, with a QR to add a wish */
   .tvqr, .tvstart { display: none; }
   .tv header, .tv footer, .tv .arrow { display: none !important; }
@@ -88,7 +90,7 @@
   @media (max-width: 720px) {
     :root { --bar: 60px; }
     header { padding: 0 14px; } .tools .wide { display: none; }
-    footer { grid-template-columns: 1fr; justify-items: center; } footer .hint, footer .strip { display: none; }
+    footer { grid-template-columns: auto 1fr auto; } footer .strip { display: none; }
     .arrow.l { left: 10px; } .arrow.r { right: 10px; }
   }
   @media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition-duration: .01s !important; } }
@@ -101,7 +103,6 @@
     <span>{{name}}</span>
   </div>
   <nav class="tools">
-    <button class="b icon" id="mute" aria-label="sound"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M2 6h3l4-3v10l-4-3H2z"/><path id="wave" d="M11.5 5.5a3.5 3.5 0 0 1 0 5"/></svg></button>
     <button class="b icon" id="full" aria-label="{{full}}"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M2 6V2h4M10 2h4v4M14 10v4h-4M6 14H2v-4"/></svg></button>
     <a class="b" href="{{base}}add/">{{add}}</a>
     <button class="b dark" id="watch"><svg viewBox="0 0 16 16" fill="currentColor"><path d="M4 2.5v11L13 8z"/></svg>{{play}}</button>
@@ -115,15 +116,16 @@
 
 
 <footer>
-  <span class="hint" id="hint" data-front="{{hint}}" data-open="{{hint_open}}" data-back="{{hint_back}}">{{hint}}</span>
   <div class="prog">
-    <button class="b small open-ed" id="openBook">{{open_book}}</button>
-    <button class="b small close-ed" id="closeBook">{{close_book}}</button>
     <span id="pa">{{p_front}}</span>
     <div class="track" id="track"><div class="fill" id="fill"></div></div>
     <span id="pb">3</span>
   </div>
   <div class="strip" id="strip" aria-label="pages"></div>
+  <div class="ctl">
+    <button class="b small open-ed" id="openBook">{{open_book}}</button>
+    <button class="b small close-ed" id="closeBook">{{close_book}}</button>
+  </div>
 </footer>
 
 <div class="tvqr" aria-hidden="true">
