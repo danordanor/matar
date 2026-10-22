@@ -91,6 +91,10 @@
   .full.quiet .arrow { opacity: 0; pointer-events: none; }
   .full.quiet #book canvas { cursor: none; }
   /* loading: a small book whose pages keep turning, until the real one is ready */
+  .wv { position: fixed; inset: 0; z-index: 25; background: rgba(0,0,0,.72); display: grid; place-items: center; padding: 20px; }
+  .wvbox { position: relative; width: min(92vw, 420px); max-height: 86svh; }
+  .wvbox video { display: block; width: 100%; max-height: 86svh; border-radius: 20px; background: #000; }
+  .wvbox .b { position: absolute; top: -14px; left: -14px; background: #fff; border-radius: 50%; }
   .loader { position: fixed; inset: 0; z-index: 20; background: #fff; display: grid; place-items: center; transition: opacity .6s var(--ease), visibility 0s linear .6s; }
   .ready .loader { opacity: 0; visibility: hidden; }
   .lb { position: relative; width: 72px; height: 48px; perspective: 420px; }
@@ -164,9 +168,10 @@
 <button class="tvstart" id="tvStart"><span>הפעלת הספר</span></button>
 
 <video id="film" playsinline preload="auto" poster="../poster.jpg"></video>
+<div class="wv" id="wv" hidden><div class="wvbox"><video controls playsinline></video><button class="b small" id="wvClose" aria-label="סגירה">✕</button></div></div>
 
 <script>window.BOOK = {"name": "מטר", "sub": "תראו אותו גדל", "label": "בר מצווה", "credit": "באהבה, אמא, אבא, מידן ואייר", "line1": "שלוש עשרה שנים. סרטון אחד.", "story": "הוא הגיע אלינו קטן, גדל בבריכות, בנחלים ועל טרמפולינות, מוקף באנשים שאוהבים אותו. ועכשיו הוא בן שלוש עשרה.", "next": "לסרטון", "blurbLabel": "תקציר", "blurb": "מהבטן של אמא, דרך המגבת האדומה, הבריכות, הנחלים והטרמפולינות, ועד היום שבו הוא עולה לתורה. כל התמונות שצילמנו לאורך השנים חוזרות לחיים, בסרטון אחד.", "bless": [{"label": "מאמא ואבא", "title": "מטר שלנו,", "body": "שלוש עשרה שנים שאנחנו מסתכלים עליך גדל, ומתרגשים מחדש כל יום. אתה סקרן, מצחיק, אמיץ ועם לב ענק. תמשיך לטפס גבוה, לשאול שאלות ולהיות בדיוק מי שאתה. אנחנו תמיד פה, מאחוריך.", "sign": "מזל טוב, אמא ואבא"}, {"label": "ממידן", "title": "מטר,", "photo": "f/72.jpg", "body": "אתה האח הכי טוב בעולם. תודה שאתה משחק איתי ומצחיק אותי. אני אוהב אותך המון.", "sign": "מזל טוב, מידן"}, {"label": "מאייר", "title": "אחי,", "photo": "d/01.jpg", "body": "אחי הקטן כבר לא כל כך קטן. תודה על כל הצחוקים, המשחקים והריבים שנגמרים בצחוק. אני גאה בך ותמיד אהיה בשבילך.", "sign": "מזל טוב, אייר"}], "duo": "מטר ואייר", "fromLabel": "ברכה מאת", "inviteLabel": "ספר הברכות", "invite1": "גם אתם", "invite2": "רוצים לברך?", "inviteUrl": "danor.studio/matar/add", "again": "לצפייה שוב", "p_front": "כריכה", "p_page": "עמוד 1", "p_back": "תקציר", "dir": "rtl", "base": "../", "play": "לצפייה בסרטון", "pause": "השהיית הסרטון"};</script>
 <script src="../lib/hls.min.js"></script>
-<script type="module" src="../book.js?v=1792682334"></script>
+<script type="module" src="../book.js?v=1792695712"></script>
 </body>
 </html>

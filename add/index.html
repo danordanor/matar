@@ -35,27 +35,38 @@
   button, input, textarea { font: inherit; color: inherit; }
 
   /* a greeting card: big photo on top, a few handwritten lines below */
-  .card { width: min(400px, 100%); background: #fff; border-radius: 32px; overflow: hidden; position: relative;
-          box-shadow: 0 40px 70px -34px rgba(40, 30, 10, .35), 0 0 0 1px rgba(0,0,0,.03); }
+  .stack { position: relative; width: min(340px, 100%); }
+  /* other blessings waiting behind this one */
+  .stack::before, .stack::after { content: ""; position: absolute; inset: 0; border-radius: 28px; box-shadow: 0 30px 50px -30px rgba(40, 30, 10, .3); }
+  .stack::before { transform: rotate(-6deg) translate(-14px, 10px); background: #ebe7dd; }
+  .stack::after { transform: rotate(4deg) translate(14px, 6px); background: #f3f0e9; }
+  .card { background: #fff; border-radius: 28px; overflow: hidden; position: relative; z-index: 1;
+          box-shadow: 0 34px 60px -30px rgba(40, 30, 10, .4), 0 0 0 1px rgba(0,0,0,.035); }
 
   .photo { position: relative; aspect-ratio: 1 / 1; background: linear-gradient(150deg, #f6f4ee, #ebe7dd); cursor: pointer; overflow: hidden; }
   .photo input { position: absolute; inset: 0; opacity: 0; cursor: pointer; z-index: 3; }
   .photo .hint { position: absolute; inset: 0; display: grid; place-items: center; text-align: center; transition: opacity .3s; }
-  .photo .hint svg { width: 150px; height: 150px; }
-  .photo .hint span { position: absolute; bottom: 22px; left: 0; right: 0; font-size: 14px; color: rgba(22,20,15,.6); }
-  .photo img { display: none; position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
-  .photo.has img { display: block; } .photo.has .hint { opacity: 0; }
-  .photo .clear { position: absolute; top: 14px; left: 14px; z-index: 4; background: rgba(22,20,15,.72); color: #fff; border: 0; width: 32px; height: 32px; border-radius: 50%; display: none; cursor: pointer; font-size: 14px; backdrop-filter: blur(6px); }
-  .photo.has .clear { display: grid; place-items: center; }
+  .photo .hint svg { width: 120px; height: 120px; margin-top: -14px; }
+  .photo .hint span { position: absolute; bottom: 58px; left: 0; right: 0; font-size: 13px; color: rgba(22,20,15,.6); }
+  .photo img, .photo video { display: none; position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+  .photo.has img, .photo.vid video { display: block; } .photo.has .hint, .photo.vid .hint { opacity: 0; }
+  .photo.vid img { display: none; }
+  .rec { position: absolute; bottom: 14px; left: 50%; transform: translateX(-50%); z-index: 4; display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px 8px 12px; border-radius: 999px;
+         background: #fff; color: var(--ink); font-size: 13px; font-weight: 500; box-shadow: 0 6px 18px -6px rgba(0,0,0,.25); cursor: pointer; }
+  .rec svg { width: 18px; height: 18px; }
+  .rec input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+  .photo.has .rec, .photo.vid .rec { display: none; }
+  .photo .clear { position: absolute; top: 12px; left: 12px; z-index: 4; background: rgba(22,20,15,.72); color: #fff; border: 0; width: 32px; height: 32px; border-radius: 50%; display: none; cursor: pointer; font-size: 14px; backdrop-filter: blur(6px); }
+  .photo.has .clear, .photo.vid .clear { display: grid; place-items: center; }
 
-  .write { padding: 24px 26px 22px; }
+  .write { padding: 20px 22px 20px; }
   .hand { font-family: "Hand", "Swiss", cursive; color: var(--pen); background: transparent; border: 0; outline: none; width: 100%; -webkit-appearance: none; border-radius: 0; display: block; }
   .hand::placeholder { color: rgba(31,45,90,.28); }
-  .msg { font-size: 26px; line-height: 1.45; min-height: 76px; max-height: 34svh; resize: none; overflow: auto; }
-  .name { font-size: 24px; line-height: 1.3; margin-top: 10px; text-align: left; direction: rtl; }
+  .msg { font-size: 24px; line-height: 1.45; min-height: 70px; max-height: 30svh; resize: none; overflow: auto; }
+  .name { font-size: 22px; line-height: 1.3; margin-top: 8px; text-align: left; direction: rtl; }
   .name::placeholder { text-align: left; }
 
-  .send { margin: 18px 0 0; width: 100%; height: 54px; background: var(--ink); color: #fff; border: 0; border-radius: 999px; font-size: 16px; font-weight: 500; cursor: pointer; transition: opacity .2s, transform .3s var(--ease); }
+  .send { margin: 16px 0 0; width: 100%; height: 50px; background: var(--ink); color: #fff; border: 0; border-radius: 999px; font-size: 16px; font-weight: 500; cursor: pointer; transition: opacity .2s, transform .3s var(--ease); }
   .send:active { transform: scale(.98); }
   .send[disabled] { opacity: .45; cursor: default; }
   .err { color: #b3261e; font-size: 13px; margin-top: 10px; text-align: center; }
@@ -68,10 +79,10 @@
 </style>
 </head>
 <body>
-<div class="card">
+<div class="stack"><div class="card">
 <form id="f" novalidate>
   <div class="photo" id="drop">
-    <input type="file" id="file" accept="image/*">
+    <input type="file" id="file" accept="image/*,video/*">
     <div class="hint">
       <svg viewBox="0 0 150 150" fill="none" stroke="#1f2d5a" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
         <!-- you -->
@@ -84,9 +95,11 @@
         <circle cx="118" cy="36" r="13" fill="#16140f" stroke="none"/>
         <path d="M118 30v12M112 36h12" stroke="#fff" stroke-width="2.4"/>
       </svg>
-      <span>תמונה שלכם עם מטר</span>
+      <span>תמונה או וידאו שלכם עם מטר</span>
     </div>
     <img id="preview" alt="">
+    <video id="vprev" muted loop playsinline></video>
+    <label class="rec" id="rec"><input type="file" id="cam" accept="video/*" capture="user"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="5" width="11" height="10" rx="2.5"/><path d="M13.5 9l4-2.5v7l-4-2.5"/></svg>צלמו ברכה</label>
     <button type="button" class="clear" id="clear" aria-label="הסרת תמונה">✕</button>
   </div>
 
@@ -102,15 +115,16 @@
   <h2>תודה!</h2>
   <p>הברכה נכנסה לספר של מטר.</p>
 </section>
-</div>
+</div></div>
 
 <script>
 (() => {
   const SB = "https://rjtuakbvpfookqutbych.supabase.co", KEY = "sb_publishable_HhbL6xXv99EtHFn00yRfSA_w9mLKOhr";
   const H = { apikey: KEY, Authorization: "Bearer " + KEY };
   const $ = (id) => document.getElementById(id);
-  const msg = $("msg"), file = $("file"), drop = $("drop"), preview = $("preview"), err = $("err"), send = $("send");
-  let blob = null;
+  const msg = $("msg"), file = $("file"), cam = $("cam"), drop = $("drop"), preview = $("preview"), vprev = $("vprev"), err = $("err"), send = $("send");
+  let blob = null, vid = null;   // photo (or video poster) jpeg, and the video file
+  const MAXV = 45 * 1024 * 1024;
 
   msg.addEventListener("input", () => { msg.style.height = "auto"; msg.style.height = msg.scrollHeight + "px"; });
 
@@ -124,12 +138,31 @@
     URL.revokeObjectURL(url);
     return await new Promise((res) => c.toBlob(res, "image/jpeg", .86));
   }
-  file.addEventListener("change", async () => {
-    err.textContent = ""; const f = file.files[0]; if (!f) return;
-    try { blob = await shrink(f); preview.src = URL.createObjectURL(blob); drop.classList.add("has"); }
-    catch (e) { err.textContent = "לא הצלחנו לפתוח את התמונה. נסו תמונה אחרת."; blob = null; }
-  });
-  $("clear").addEventListener("click", (e) => { e.preventDefault(); e.stopPropagation(); blob = null; file.value = ""; drop.classList.remove("has"); });
+  // a video: show it, and grab its first frame as the picture for the book page
+  async function takeVideo(f) {
+    if (f.size > MAXV) throw new Error("big");
+    const url = URL.createObjectURL(f);
+    vprev.src = url; await new Promise((res, rej) => { vprev.onloadeddata = res; vprev.onerror = rej; });
+    try { vprev.currentTime = Math.min(.6, (vprev.duration || 1) / 3); await new Promise((res) => { vprev.onseeked = res; setTimeout(res, 1200); }); } catch (e) {}
+    const k = Math.min(1, 1200 / Math.max(vprev.videoWidth, vprev.videoHeight));
+    const c = document.createElement("canvas"); c.width = Math.round(vprev.videoWidth * k) || 720; c.height = Math.round(vprev.videoHeight * k) || 1280;
+    c.getContext("2d").drawImage(vprev, 0, 0, c.width, c.height);
+    blob = await new Promise((res) => c.toBlob(res, "image/jpeg", .85));
+    vid = f; vprev.play().catch(() => {}); drop.classList.add("vid");
+  }
+  async function take(f) {
+    err.textContent = ""; if (!f) return;
+    try {
+      if (f.type.startsWith("video/")) await takeVideo(f);
+      else { blob = await shrink(f); vid = null; preview.src = URL.createObjectURL(blob); drop.classList.add("has"); }
+    } catch (e) {
+      err.textContent = e.message === "big" ? "הסרטון גדול מדי (עד 45MB). נסו סרטון קצר יותר." : "לא הצלחנו לפתוח את הקובץ. נסו אחר.";
+      blob = null; vid = null;
+    }
+  }
+  file.addEventListener("change", () => take(file.files[0]));
+  cam.addEventListener("change", () => take(cam.files[0]));
+  $("clear").addEventListener("click", (e) => { e.preventDefault(); e.stopPropagation(); blob = null; vid = null; file.value = ""; cam.value = ""; vprev.pause(); vprev.removeAttribute("src"); drop.classList.remove("has", "vid"); });
 
   $("f").addEventListener("submit", async (e) => {
     e.preventDefault(); err.textContent = "";
@@ -138,13 +171,20 @@
     if (!message) return err.textContent = "כתבו ברכה.";
     send.disabled = true; send.textContent = "שולחים…";
     try {
-      let photo_path = null;
+      let photo_path = null, video_path = null; const id = crypto.randomUUID();
       if (blob) {
-        photo_path = "wishes/" + crypto.randomUUID() + ".jpg";
+        photo_path = "wishes/" + id + ".jpg";
         const up = await fetch(`${SB}/storage/v1/object/matar/${photo_path}`, { method: "POST", headers: { ...H, "Content-Type": "image/jpeg" }, body: blob });
         if (!up.ok) throw new Error("upload " + up.status);
       }
-      const r = await fetch(`${SB}/rest/v1/matar_wishes`, { method: "POST", headers: { ...H, "Content-Type": "application/json", Prefer: "return=minimal" }, body: JSON.stringify({ name, message, photo_path }) });
+      if (vid) {
+        send.textContent = "מעלים את הסרטון…";
+        const ext = (vid.type.split("/")[1] || "mp4").replace("quicktime", "mov");
+        video_path = "wishes/" + id + "." + ext;
+        const up = await fetch(`${SB}/storage/v1/object/matar/${video_path}`, { method: "POST", headers: { ...H, "Content-Type": vid.type || "video/mp4" }, body: vid });
+        if (!up.ok) throw new Error("upload " + up.status);
+      }
+      const r = await fetch(`${SB}/rest/v1/matar_wishes`, { method: "POST", headers: { ...H, "Content-Type": "application/json", Prefer: "return=minimal" }, body: JSON.stringify({ name, message, photo_path, video_path }) });
       if (!r.ok) throw new Error("insert " + r.status);
       document.body.classList.add("sent");
     } catch (e2) {

@@ -19,7 +19,7 @@ const SB = "https://rjtuakbvpfookqutbych.supabase.co", SB_KEY = "sb_publishable_
 async function fetchWishes() {
   try {
     const ctl = new AbortController(); setTimeout(() => ctl.abort(), 6000);
-    const r = await fetch(`${SB}/rest/v1/matar_wishes?select=id,name,message,photo_path,created_at&hidden=eq.false&order=created_at.asc`, { headers: { apikey: SB_KEY, Authorization: "Bearer " + SB_KEY }, signal: ctl.signal });
+    const r = await fetch(`${SB}/rest/v1/matar_wishes?select=id,name,message,photo_path,video_path,created_at&hidden=eq.false&order=created_at.asc`, { headers: { apikey: SB_KEY, Authorization: "Bearer " + SB_KEY }, signal: ctl.signal });
     return r.ok ? await r.json() : [];
   } catch (e) { return []; }
 }
@@ -195,7 +195,7 @@ async function faces() {
   const wishImgs = await Promise.all(wishes.map((w) => w.photo_path ? loadImg(`${SB}/storage/v1/object/public/matar/${w.photo_path}`) : null));
   const qr = await loadImg(QR_SRC);
   coverPool = [...Object.values(IMG), ...DUO, ...wishImgs, ...blessImgs].filter(Boolean);
-  const wishPage = (wsh, im) => ({ kind: "page", draw: (g, w, h) => {
+  const wishPage = (wsh, im) => ({ kind: "wish", video: wsh.video_path ? `${SB}/storage/v1/object/public/matar/${wsh.video_path}` : null, draw: (g, w, h) => {
     paper(g, w, h);
     txt(g, T.fromLabel, sx(w), M + 24, 26, 400, GREY);
     hand(g, wsh.name, sx(w), M + 110, w - 2 * M, 64, 70, 1);
@@ -204,7 +204,12 @@ async function faces() {
       const bw = w - 2 * M, bh = h * .42, k = Math.min(bw / im.width, bh / im.height), pw = im.width * k, ph = im.height * k;
       g.save(); g.translate(w / 2, y + bh / 2); g.rotate((RTL ? 1.2 : -1.2) * Math.PI / 180);
       g.shadowColor = "rgba(0,0,0,.16)"; g.shadowBlur = 16; g.shadowOffsetY = 6; g.fillStyle = "#fff"; g.fillRect(-pw / 2 - 12, -ph / 2 - 12, pw + 24, ph + 24);
-      g.shadowColor = "transparent"; g.drawImage(im, -pw / 2, -ph / 2, pw, ph); g.restore();
+      g.shadowColor = "transparent"; g.drawImage(im, -pw / 2, -ph / 2, pw, ph);
+      if (wsh.video_path) {   // a video wish: play badge over its first frame
+        g.fillStyle = "rgba(255,255,255,.92)"; g.beginPath(); g.arc(0, 0, 48, 0, Math.PI * 2); g.fill();
+        g.fillStyle = INK; g.beginPath(); g.moveTo(-14, -22); g.lineTo(24, 0); g.lineTo(-14, 22); g.closePath(); g.fill();
+      }
+      g.restore();
       y += bh + 90;
     } else y += 60;
     const size = im ? 40 : 50, lh = size * 1.5, maxLines = Math.floor((h - M - 40 - y) / lh);
@@ -278,7 +283,7 @@ function makeLeaf(f, i, n) {
   const mb = new THREE.MeshStandardMaterial({ map: tex(f[1], S > 0), roughness: hard ? .85 : .95, side: THREE.BackSide });
   const a = new THREE.Mesh(geo, mf), b = new THREE.Mesh(geo, mb);
   a.castShadow = b.castShadow = true; a.receiveShadow = b.receiveShadow = true;
-  a.userData = { kind: f[0].kind, leaf: i, side: 0 }; b.userData = { kind: f[1].kind, leaf: i, side: 1 };
+  a.userData = { kind: f[0].kind, leaf: i, side: 0, video: f[0].video }; b.userData = { kind: f[1].kind, leaf: i, side: 1, video: f[1].video };
   book.add(a, b);
   const L = { i, n, w, h, hard, geo, p: 0, meshes: [a, b], canv }; place(L, 0); return L;
 }
@@ -429,8 +434,9 @@ const wake = () => { body.classList.remove("quiet"); clearTimeout(quietT); quiet
 // which leaf would a pointer-down turn, and which way
 function grab(e) {
   const hit = pick(e); if (!hit) return null;
-  const { kind, leaf, side } = hit.object.userData;
-  if (kind === "film") return { L: leaves[state], dir: 1, kind };                 // the film spread: its left leaf is next to turn
+  const { kind, leaf, side, video } = hit.object.userData;
+  if (kind === "film") return { L: leaves[state], dir: 1, kind };
+  if (kind === "wish" && video && (leaf === state || leaf === state - 1)) return { L: null, dir: 0, kind, video };   // a video wish on the open spread: tap plays it                 // the film spread: its left leaf is next to turn
   if (side === 0 && leaf === state && state < END) return { L: leaves[state], dir: 1, kind };
   if (side === 1 && leaf === state - 1) return { L: leaves[state - 1], dir: -1, kind };
   return { L: null, dir: 0, kind };
@@ -458,20 +464,32 @@ renderer.domElement.addEventListener("pointerdown", (e) => {
 });
 function release(e) {
   if (drag) {
-    const d = drag; drag = null; d.L.drag = false; renderer.domElement.style.cursor = "default";
+    const d = drag; drag = null; if (d.L) d.L.drag = false; renderer.domElement.style.cursor = "default";
     if (d.moved) { if (d.dir > 0 ? d.L.p > .3 : d.L.p < .7) go(state + d.dir); return; }   // past the fold: it turns, else it falls back
     // a plain tap
     if (d.kind === "film") return video.paused ? video.play() : video.pause();
+    if (d.kind === "wish" && d.video) return playWish(d.video);
     if (d.kind === "back") return go(FILM, { restart: true });
     return go(state + d.dir);
   }
   if (!down) return; const dx = sideways() ? e.clientY - down.y : e.clientX - down.x; down = null;
   if (Math.abs(dx) > 40) return (dx < 0) === RTL ? prev() : next();   // swipe anywhere
   const hit = pick(e); if (!hit) return;
-  const { kind } = hit.object.userData;
+  const { kind, video: wvUrl } = hit.object.userData;
+  if (kind === "wish" && wvUrl) return playWish(wvUrl);
   if (kind === "back") return go(FILM, { restart: true });
   if (kind === "front") next();
 }
+// a guest's video blessing plays in a small overlay above the book
+const wv = $("wv"), wvv = wv.querySelector("video");
+function playWish(url) {
+  autoOff = true; video.pause();
+  wvv.src = url; wv.hidden = false; wvv.play().catch(() => {});
+}
+const closeWish = () => { wv.hidden = true; wvv.pause(); wvv.removeAttribute("src"); wvv.load(); };
+wv.addEventListener("click", (e) => { if (e.target === wv) closeWish(); });
+$("wvClose").onclick = closeWish;
+addEventListener("keydown", (e) => { if (e.key === "Escape" && !wv.hidden) { e.stopImmediatePropagation(); closeWish(); } }, true);
 renderer.domElement.addEventListener("pointerup", release);
 renderer.domElement.addEventListener("pointercancel", release);
 addEventListener("keydown", (e) => {
