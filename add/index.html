@@ -15,115 +15,95 @@
 <style>
   @font-face { font-family: "Swiss"; font-weight: 400; src: url(../fonts/plex-hebrew-400.woff2) format("woff2"); unicode-range: U+0590-05FF, U+200C-2010, U+20AA, U+25CC, U+FB1D-FB4F; }
   @font-face { font-family: "Swiss"; font-weight: 500; src: url(../fonts/plex-hebrew-500.woff2) format("woff2"); unicode-range: U+0590-05FF, U+200C-2010, U+20AA, U+25CC, U+FB1D-FB4F; }
-  @font-face { font-family: "Swiss"; font-weight: 600; src: url(../fonts/plex-hebrew-600.woff2) format("woff2"); unicode-range: U+0590-05FF, U+200C-2010, U+20AA, U+25CC, U+FB1D-FB4F; }
   @font-face { font-family: "Swiss"; font-weight: 400; src: url(../fonts/plex-latin-400.woff2) format("woff2"); unicode-range: U+0000-00FF, U+2000-206F; }
   @font-face { font-family: "Swiss"; font-weight: 500; src: url(../fonts/plex-latin-500.woff2) format("woff2"); unicode-range: U+0000-00FF, U+2000-206F; }
   @font-face { font-family: "Hand"; font-weight: 400; src: url(../fonts/hand-hebrew-400.woff2) format("woff2"); unicode-range: U+0590-05FF, U+200C-2010, U+20AA, U+25CC, U+FB1D-FB4F; font-display: swap; }
   @font-face { font-family: "Hand"; font-weight: 400; src: url(../fonts/hand-latin-400.woff2) format("woff2"); unicode-range: U+0000-00FF, U+2000-206F; font-display: swap; }
 
-  :root { --ink: #16140f; --pen: #1f2d5a; --soft: #8a857a; --paper: #fffdf7; --ease: cubic-bezier(.22, 1, .36, 1); }
+  :root { --ink: #16140f; --pen: #1f2d5a; --soft: #8a857a; --ease: cubic-bezier(.22, 1, .36, 1); }
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  html { background: #fff; }
-  body { font-family: "Swiss", system-ui, sans-serif; color: var(--ink); -webkit-font-smoothing: antialiased; min-height: 100svh; display: flex; flex-direction: column;
+  html { background: #FFC83A; }
+  body { font-family: "Swiss", system-ui, sans-serif; color: var(--ink); -webkit-font-smoothing: antialiased; min-height: 100svh; display: grid; place-items: center; padding: 16px;
          background: linear-gradient(160deg, #FFE27A, #FFC83A 55%, #F4A62A); }
   button, input, textarea { font: inherit; color: inherit; }
 
-  .top { padding: 26px 22px 6px; display: flex; justify-content: space-between; align-items: baseline; font-size: 14px; }
-  .top b { font-weight: 600; }
-  .top span { opacity: .6; }
-
-  /* the card itself: a sheet of paper, like a page in the book */
-  main { flex: 1; display: grid; place-items: start center; padding: 18px 16px 40px; }
-  .card { width: min(560px, 100%); background: var(--paper); padding: 34px 30px 30px; position: relative;
-          box-shadow: 0 30px 60px -30px rgba(90, 50, 0, .45), 0 2px 0 rgba(0,0,0,.04); }
-  .card::before { content: ""; position: absolute; inset: 0; pointer-events: none;
-                  background: repeating-linear-gradient(0deg, transparent 0 44px, rgba(31,45,90,.07) 44px 45px); background-position: 0 142px; }
-  .label { font-size: 13px; color: var(--soft); letter-spacing: .02em; }
-
+  /* one small rounded window, nothing around it */
+  .card { width: min(420px, 100%); background: #fff; border-radius: 28px; padding: 28px 26px 22px; position: relative;
+          box-shadow: 0 30px 60px -28px rgba(90, 50, 0, .5); }
+  .label { font-size: 12px; color: var(--soft); }
   .hand { font-family: "Hand", "Swiss", cursive; color: var(--pen); background: transparent; border: 0; outline: none; width: 100%; -webkit-appearance: none; border-radius: 0; }
   .hand::placeholder { color: rgba(31,45,90,.3); }
-  .name { font-size: 40px; line-height: 1.15; margin-top: 4px; }
-  .msg { font-size: 25px; line-height: 45px; min-height: 225px; resize: none; margin-top: 10px; overflow: hidden; }
-  .count { font-size: 12px; color: var(--soft); text-align: left; direction: ltr; margin-top: 4px; }
+  .name { font-size: 34px; line-height: 1.15; margin-top: 2px; }
+  .msg { font-size: 23px; line-height: 1.5; min-height: 108px; max-height: 40svh; resize: none; margin-top: 14px; overflow: auto; }
 
-  /* photo: a tilted print pinned to the side of the page */
-  .photo { position: relative; float: left; width: 42%; margin: 6px 0 14px 0; margin-inline-start: 18px; aspect-ratio: 4 / 5; background: #fff; padding: 8px 8px 26px;
-           transform: rotate(-4deg); box-shadow: 0 14px 28px -12px rgba(0,0,0,.35), 0 1px 2px rgba(0,0,0,.08); cursor: pointer; transition: transform .35s var(--ease); }
-  .photo:hover { transform: rotate(-2.5deg) scale(1.02); }
+  /* photo slot: a cute rounded frame with a little drawing of you and Matar */
+  .photo { position: relative; margin-top: 16px; height: 128px; border-radius: 20px; background: #FFF4CC; overflow: hidden; cursor: pointer;
+           display: flex; align-items: center; gap: 14px; padding: 0 18px; transition: background .25s; }
+  .photo:hover { background: #FFEEB3; }
   .photo input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
-  .photo .frame { width: 100%; height: 100%; background: #f1ede3; display: grid; place-items: center; text-align: center; overflow: hidden; }
-  .photo .empty { font-size: 13px; color: var(--soft); line-height: 1.4; padding: 10px; }
-  .photo .empty b { display: block; font-size: 28px; font-weight: 400; color: var(--pen); font-family: "Hand", cursive; margin-bottom: 4px; }
-  .photo img { display: none; width: 100%; height: 100%; object-fit: cover; }
-  .photo.has img { display: block; } .photo.has .empty { display: none; }
-  .photo .clear { position: absolute; top: -10px; left: -10px; background: var(--ink); color: #fff; border: 0; width: 28px; height: 28px; border-radius: 50%; display: none; z-index: 2; cursor: pointer; font-size: 13px; }
+  .photo svg { width: 92px; height: 92px; flex: none; }
+  .photo .txt { font-size: 15px; line-height: 1.4; }
+  .photo .txt small { display: block; font-size: 12px; color: var(--soft); margin-top: 2px; }
+  .photo img { display: none; position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+  .photo.has img { display: block; } .photo.has svg, .photo.has .txt { display: none; }
+  .photo .clear { position: absolute; top: 10px; left: 10px; background: rgba(22,20,15,.8); color: #fff; border: 0; width: 28px; height: 28px; border-radius: 50%; display: none; z-index: 2; cursor: pointer; font-size: 13px; }
   .photo.has .clear { display: grid; place-items: center; }
-  .clearfix::after { content: ""; display: block; clear: both; }
 
-  .send { width: 100%; height: 56px; margin-top: 22px; background: var(--ink); color: #fff; border: 0; font-size: 17px; font-weight: 500; cursor: pointer; transition: opacity .2s; }
+  .send { width: 100%; height: 54px; margin-top: 16px; background: var(--ink); color: #fff; border: 0; border-radius: 16px; font-size: 16px; font-weight: 500; cursor: pointer; transition: opacity .2s; }
   .send[disabled] { opacity: .45; cursor: default; }
-  .err { color: #b3261e; font-size: 14px; min-height: 1em; margin-top: 10px; }
+  .err { color: #b3261e; font-size: 13px; min-height: 1em; margin-top: 10px; text-align: center; }
+  .err:empty { display: none; }
 
-  .done { display: none; place-items: center; text-align: center; padding: 60px 22px; }
+  .done { display: none; text-align: center; padding: 36px 10px 26px; }
   .done h2 { font-family: "Hand", cursive; font-weight: 400; color: var(--pen); font-size: 56px; }
-  .done p { margin-top: 10px; font-size: 17px; opacity: .75; }
-  .done a { display: inline-block; margin-top: 28px; padding: 14px 22px; background: var(--ink); color: #fff; text-decoration: none; }
-  .sent .card { display: none; } .sent .done { display: grid; }
-  footer { text-align: center; font-size: 13px; opacity: .55; padding: 18px; }
-  footer a { color: inherit; text-decoration: none; }
-
-  @media (max-width: 420px) {
-    .card { padding: 28px 20px 24px; }
-    .name { font-size: 34px; }
-    .msg { font-size: 23px; }
-    .photo { width: 46%; }
-  }
+  .done p { margin-top: 8px; font-size: 16px; color: var(--soft); }
+  .sent form { display: none; } .sent .done { display: block; }
 </style>
 </head>
 <body>
-<div class="top"><b>מטר · בר מצווה</b><span>ספר הברכות</span></div>
-
-<main>
-<form class="card clearfix" id="f" novalidate>
+<div class="card">
+<form id="f" novalidate>
   <div class="label">ברכה מאת</div>
   <input class="hand name" type="text" id="name" maxlength="60" autocomplete="name" placeholder="השם שלכם" required>
+  <textarea class="hand msg" id="msg" maxlength="700" placeholder="מטר יקר," required rows="3"></textarea>
 
   <div class="photo" id="drop">
     <input type="file" id="file" accept="image/*">
-    <div class="frame">
-      <div class="empty"><b>+</b>הוסיפו תמונה<br>(לא חובה)</div>
-      <img id="preview" alt="">
-    </div>
+    <svg viewBox="0 0 92 92" fill="none" stroke="#1f2d5a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <rect x="8" y="14" width="76" height="64" rx="10" fill="#fff"/>
+      <!-- you -->
+      <circle cx="36" cy="38" r="8"/>
+      <path d="M22 70c0-10 6-16 14-16s14 6 14 16"/>
+      <!-- matar, a bit shorter -->
+      <circle cx="59" cy="46" r="6.5"/>
+      <path d="M48 70c0-8 5-13 11-13s11 5 11 13"/>
+      <!-- sun -->
+      <circle cx="70" cy="26" r="4" fill="#FFC83A" stroke="none"/>
+    </svg>
+    <div class="txt">תמונה שלכם עם מטר<small>לא חובה · לחצו להוסיף</small></div>
+    <img id="preview" alt="">
     <button type="button" class="clear" id="clear" aria-label="הסרת תמונה">✕</button>
   </div>
 
-  <textarea class="hand msg" id="msg" maxlength="700" placeholder="מטר יקר," required rows="5"></textarea>
-  <div class="count" id="count">0 / 700</div>
-
   <p class="err" id="err"></p>
-  <button class="send" id="send" type="submit">שליחת הברכה לספר</button>
+  <button class="send" id="send" type="submit">שליחת הברכה</button>
 </form>
 
 <section class="done">
-  <div>
-    <h2>תודה!</h2>
-    <p>הברכה שלכם נכנסה לספר של מטר.</p>
-  </div>
+  <h2>תודה!</h2>
+  <p>הברכה שלכם נכנסה לספר של מטר.</p>
 </section>
-</main>
-
-<footer>מטר · בר מצווה</footer>
+</div>
 
 <script>
 (() => {
   const SB = "https://rjtuakbvpfookqutbych.supabase.co", KEY = "sb_publishable_HhbL6xXv99EtHFn00yRfSA_w9mLKOhr";
   const H = { apikey: KEY, Authorization: "Bearer " + KEY };
   const $ = (id) => document.getElementById(id);
-  const msg = $("msg"), count = $("count"), file = $("file"), drop = $("drop"), preview = $("preview"), err = $("err"), send = $("send");
+  const msg = $("msg"), file = $("file"), drop = $("drop"), preview = $("preview"), err = $("err"), send = $("send");
   let blob = null;
 
-  const grow = () => { msg.style.height = "auto"; msg.style.height = Math.max(225, msg.scrollHeight) + "px"; };
-  msg.addEventListener("input", () => { count.textContent = msg.value.length + " / 700"; grow(); });
+  msg.addEventListener("input", () => { msg.style.height = "auto"; msg.style.height = msg.scrollHeight + "px"; });
 
   // shrink the photo on the phone before upload (max 1600px, jpeg)
   async function shrink(f) {
@@ -157,9 +137,9 @@
       }
       const r = await fetch(`${SB}/rest/v1/matar_wishes`, { method: "POST", headers: { ...H, "Content-Type": "application/json", Prefer: "return=minimal" }, body: JSON.stringify({ name, message, photo_path }) });
       if (!r.ok) throw new Error("insert " + r.status);
-      document.body.classList.add("sent"); scrollTo(0, 0);
+      document.body.classList.add("sent");
     } catch (e2) {
-      err.textContent = "משהו לא עבד. נסו שוב בעוד רגע."; send.disabled = false; send.textContent = "שליחת הברכה לספר";
+      err.textContent = "משהו לא עבד. נסו שוב בעוד רגע."; send.disabled = false; send.textContent = "שליחת הברכה";
     }
   });
 })();
