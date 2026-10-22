@@ -25,14 +25,15 @@
   :root { --ink: #111; --soft: #8c8c8c; --line: #e3e3e3; --ease: cubic-bezier(.22, 1, .36, 1); --bar: 72px; }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   html, body { height: 100%; overflow: hidden; background: #fff; }
+  body { font-family: "Swiss", system-ui, sans-serif; font-size: 14px; font-weight: 500; color: var(--ink); -webkit-font-smoothing: antialiased; -webkit-tap-highlight-color: transparent; }
   button, a { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; text-decoration: none; }
 
   /* top bar */
   header { position: fixed; top: 0; inset-inline: 0; height: var(--bar); display: flex; align-items: center; justify-content: space-between; padding: 0 24px; border-bottom: 1px solid var(--line); background: #fff; z-index: 5; }
-  .brand { display: flex; align-items: center; gap: 12px; font-weight: 500; font-size: 22px; letter-spacing: -.02em; }
+  .brand { display: flex; align-items: center; gap: 10px; font-weight: 500; font-size: 18px; }
   .brand svg { width: 28px; height: 28px; }
   .tools { display: flex; gap: 6px; }
-  .b { height: 40px; min-width: 40px; padding: 0 14px; display: inline-flex; align-items: center; justify-content: center; gap: 10px; border: 1px solid #d6d6d6; font-size: 14px; letter-spacing: -.01em; transition: border-color .25s, background .25s; white-space: nowrap; }
+  .b { height: 40px; min-width: 40px; padding: 0 14px; display: inline-flex; align-items: center; justify-content: center; gap: 10px; border: 1px solid #d6d6d6; font-size: 14px; font-weight: 500; transition: border-color .25s, background .25s; white-space: nowrap; }
   .b:hover { border-color: var(--ink); }
   .b.dark { background: var(--ink); color: #fff; border-color: var(--ink); }
   .b.icon { padding: 0; width: 40px; }
@@ -51,11 +52,11 @@
   .arrow.l { left: 24px; } .arrow.r { right: 24px; }
   .arrow[disabled] { opacity: 0; pointer-events: none; }
 
-  .b.small { height: 28px; padding: 0 10px; font-size: 12px; }
+  .b.small { height: 32px; padding: 0 12px; font-size: 13px; }
   [data-state="open"] .open-ed, [data-state="pages"] .open-ed, [data-state="front"] .close-ed, [data-state="back"] .close-ed { display: none; }
 
   /* status bar */
-  footer { position: fixed; bottom: 0; inset-inline: 0; height: 48px; border-top: 1px solid var(--line); display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; padding: 0 20px; font-size: 13px; color: var(--soft); background: #fff; z-index: 5; }
+  footer { position: fixed; bottom: 0; inset-inline: 0; height: 48px; border-top: 1px solid var(--line); display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; padding: 0 20px; font-size: 13px; font-weight: 500; color: var(--soft); background: #fff; z-index: 5; }
   footer .ctl { justify-self: end; }
   footer .prog { justify-self: start; }
   .strip { display: flex; gap: 6px; justify-self: center; overflow-x: auto; max-width: 100%; padding: 4px 2px; scrollbar-width: none; direction: rtl; touch-action: pan-x; }
@@ -82,10 +83,10 @@
   .tv #book { top: 0; bottom: 0; }
   .tv .tvqr { display: flex; position: fixed; bottom: 32px; inset-inline-start: 32px; z-index: 6; align-items: center; gap: 18px; background: #fff; padding: 16px 22px 16px 16px; box-shadow: 0 10px 40px rgba(0,0,0,.08); }
   .tv .tvqr img { width: 120px; height: 120px; }
-  .tv .tvqr b { display: block; font-size: 22px; font-weight: 600; }
-  .tv .tvqr span { display: block; font-size: 15px; color: var(--soft); margin-top: 4px; }
+  .tv .tvqr b { display: block; font-size: 20px; font-weight: 600; }
+  .tv .tvqr span { display: block; font-size: 14px; font-weight: 400; color: var(--soft); margin-top: 4px; }
   .tv .tvstart { display: grid; place-items: center; position: fixed; inset: 0; z-index: 9; background: rgba(255,255,255,.55); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); cursor: pointer; border: 0; }
-  .tv .tvstart span { background: var(--ink); color: #fff; padding: 20px 34px; font-size: 22px; font-weight: 500; }
+  .tv .tvstart span { background: var(--ink); color: #fff; padding: 18px 32px; font-size: 20px; font-weight: 500; }
   video#film { position: fixed; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
   video#film:fullscreen { width: 100%; height: 100%; opacity: 1; background: #000; }
 
