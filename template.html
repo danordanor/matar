@@ -88,6 +88,8 @@
   .full #book { top: 0; bottom: 0; }
   .full .arrow { top: 50%; background: transparent; border-color: rgba(255,255,255,.18); color: rgba(255,255,255,.5); opacity: .5; }
   .full .arrow:hover { opacity: 1; border-color: rgba(255,255,255,.5); }
+  .full.quiet .arrow { opacity: 0; pointer-events: none; }
+  .full.quiet #book canvas { cursor: none; }
   /* loading: a small book whose pages keep turning, until the real one is ready */
   .loader { position: fixed; inset: 0; z-index: 20; background: #fff; display: grid; place-items: center; transition: opacity .6s var(--ease), visibility 0s linear .6s; }
   .ready .loader { opacity: 0; visibility: hidden; }

@@ -423,7 +423,9 @@ function pick(e) {
   ray.setFromCamera(m, camera);
   return ray.intersectObjects([film, ...leaves.flatMap((l) => l.meshes)], false).filter((h) => h.object !== film || filmMat.opacity > .5)[0];
 }
-let down = null, drag = null;
+let down = null, drag = null, quietT;
+const wake = () => { body.classList.remove("quiet"); clearTimeout(quietT); quietT = setTimeout(() => { if (isFull()) body.classList.add("quiet"); }, 2500); };
+["pointermove", "pointerdown", "keydown", "touchstart"].forEach((ev) => addEventListener(ev, wake, { passive: true }));
 // which leaf would a pointer-down turn, and which way
 function grab(e) {
   const hit = pick(e); if (!hit) return null;
@@ -513,7 +515,8 @@ function fit() {
   camera.aspect = w / h; camera.updateProjectionMatrix();
   const open = state > 0 && state < END, f = Math.tan(camera.fov * Math.PI / 360);
   const tight = TV || isFull();
-  const needW = open ? 2 * CW * (tight ? 1.04 : 1.16) : CW * (tight ? 1.5 : 1.75), needH = CH * (open ? (tight ? 1.05 : 1.18) : (tight ? 1.12 : 1.3));
+  let needW = open ? 2 * CW * (tight ? 1.04 : 1.16) : CW * (tight ? 1.5 : 1.75), needH = CH * (open ? (tight ? 1.05 : 1.18) : (tight ? 1.12 : 1.3));
+  if (isFull() && state === FILM) { needW = FILM_W; needH = FILM_H; }   // full screen: the video itself fills the screen, the book's edges may run off
   if (sideways()) return Math.max(needW / 2 / f, needH / 2 / (f * camera.aspect));   // the book lies along the long side of the phone
   return Math.max(needH / 2 / f, needW / 2 / (f * camera.aspect));
 }
