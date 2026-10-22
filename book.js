@@ -257,7 +257,8 @@ const book = new THREE.Group(); stage.add(book);
 
 // leaves: two cloth boards and paper pages that bend as they turn
 const leaves = [], live = [];
-const COLS = 28, PGAP = .022;
+const COLS = 28, PGAP = .022, PGAP_OPEN = .006;
+let gapNow = PGAP;   // leaf spacing: a thick body when closed, a flat spread when open
 function makeLeaf(f, i, n) {
   const hard = !!(f[0].hard || f[1].hard), w = hard ? CW : W, h = hard ? CH : H;
   const geo = new THREE.BufferGeometry();
@@ -282,7 +283,7 @@ function makeLeaf(f, i, n) {
   book.add(a, b);
   const L = { i, n, w, h, hard, geo, p: 0, meshes: [a, b], canv }; place(L, 0); return L;
 }
-const zOf = (L, p) => (1 - p) * (L.n - L.i) * PGAP + p * (L.i + 1) * PGAP;
+const zOf = (L, p) => (1 - p) * (L.n - L.i) * gapNow + p * (L.i + 1) * gapNow;
 function place(L, p) {
   const pos = L.geo.attributes.position.array, theta = Math.PI * p;
   const bend = L.hard ? 0 : -1.1 * Math.sin(Math.PI * p), lift = Math.sin(Math.PI * p) * (L.hard ? .02 : .045);
@@ -303,7 +304,7 @@ function layBlocks() {
   const un = n - k;
   // unturned side: leaves k..n-1 at z (n-k)·g … g ; turned side: leaves 0..k-1 at z g … k·g
   const E = .004;   // keep the block just under the top leaf and just above the bottom one
-  const setB = (m, count, side) => { const th = Math.max(0, count - 1) * PGAP - 2 * E; m.visible = th > .001; m.scale.set(CW - .008, CH - .01, Math.max(th, .001)); m.position.set(side * (CW - .008) / 2, 0, (count + 1) / 2 * PGAP); };
+  const setB = (m, count, side) => { const th = Math.max(0, count - 1) * gapNow - 2 * E; m.visible = th > .001; m.scale.set(CW - .008, CH - .01, Math.max(th, .001)); m.position.set(side * (CW - .008) / 2, 0, (count + 1) / 2 * gapNow); };
   setB(blockA, un, S); setB(blockB, k, -S);
 }
 // the spine, seen while the book is closed
@@ -335,6 +336,7 @@ let state = 0, FILM = 6, END = 7;
 const body = document.body;
 const name = (s) => s === 0 ? "front" : s === END ? "back" : s === FILM ? "open" : "pages";
 function go(s, opts = {}) {
+  if (state === 0 && s === 1) autoOff = false;   // opening the book starts the automatic turning again
   state = clamp(s, 0, END);
   body.dataset.state = name(state); if (strip.children.length) markStrip();
   $("left").disabled = RTL ? state === END : state === 0;
@@ -366,8 +368,8 @@ if (TV) {
 }
 // turn the pages by themselves once the book is open, until the video; any manual move restarts the wait
 const AUTO = 7;
-let autoT = 0;
-const userMove = () => { autoT = 0; };
+let autoT = 0, autoOff = false;
+const userMove = () => { autoT = 0; if (state > 0 && !TV) autoOff = true; };
 addEventListener("pointerdown", userMove); addEventListener("keydown", userMove);
 const next = () => go(state + 1), prev = () => go(state - 1);
 $("left").onclick = () => (RTL ? next() : prev());
@@ -526,10 +528,12 @@ function frame() {
   const resting = leaves.every((L) => L.p === 0 || L.p === 1);
   const closed = (state === 0 || state === END);
   spine.visible = closed && resting;
+  const gapWant = (state === 0 || state === END) ? PGAP : PGAP_OPEN;
+  if (Math.abs(gapWant - gapNow) > 1e-4) { gapNow += (gapWant - gapNow) * Math.min(1, dt * 4); for (const L of leaves) if (!L.drag) place(L, ease(L.p)); }
   layBlocks();
-  spine.scale.z = (leaves.length - 1) * PGAP + .004; spine.position.set(-S * .006, 0, (leaves.length + 1) / 2 * PGAP);
+  spine.scale.z = (leaves.length - 1) * gapNow + .004; spine.position.set(-S * .006, 0, (leaves.length + 1) / 2 * gapNow);
   const filmOn = state === FILM && resting;
-  film.position.z = gutter.position.z = leaves.length * PGAP + .004;
+  film.position.z = gutter.position.z = leaves.length * gapNow + .004;
   filmMat.opacity += ((filmOn ? 1 : 0) - filmMat.opacity) * Math.min(1, dt * (filmOn ? 4 : 10));
   film.visible = filmMat.opacity > .01;
 
@@ -544,7 +548,7 @@ function frame() {
   // moving photos redraw at ~12 fps, enough for a gentle drift and easy on phones
   if (clock.elapsedTime - liveAt > .08) { liveAt = clock.elapsedTime; for (const L of live) { const lf = leaves[L.leaf]; if (Math.abs(L.leaf - state) <= 1 || (lf.p > 0 && lf.p < 1)) { L.face.draw(L.g, L.c.width, L.c.height, clock.elapsedTime); L.t.needsUpdate = true; } } }
   const still = leaves.every((L) => L.p === 0 || L.p === 1);
-  if (still && state > 0 && state !== FILM && state < END) { autoT += dt; if (autoT > AUTO) { autoT = 0; go(state + 1); } }
+  if (!autoOff && still && state > 0 && state !== FILM && state < END) { autoT += dt; if (autoT > AUTO) { autoT = 0; go(state + 1); } }
   else if (still && TV && tvOn && (state === END || state === 0)) { autoT += dt; if (autoT > (state === END ? 12 : 4)) { autoT = 0; if (state === END) tvLoop(); else go(1); } }
   else autoT = 0;
   if (!scrub) bar();
