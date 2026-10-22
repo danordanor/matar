@@ -39,7 +39,7 @@
   .b svg { width: 16px; height: 16px; }
 
   /* stage */
-  #book { position: fixed; top: var(--bar); bottom: 44px; inset-inline: 0; opacity: 0; transition: opacity 1.4s var(--ease); }
+  #book { position: fixed; top: var(--bar); bottom: 48px; inset-inline: 0; opacity: 0; transition: opacity 1.4s var(--ease); }
   .ready #book { opacity: 1; }
   #book canvas { display: block; touch-action: none; }
 
@@ -53,10 +53,15 @@
   [data-state="open"] .open-ed, [data-state="pages"] .open-ed, [data-state="front"] .close-ed, [data-state="back"] .close-ed { display: none; }
 
   /* status bar */
-  footer { position: fixed; bottom: 0; inset-inline: 0; height: 44px; border-top: 1px solid var(--line); display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; padding: 0 20px; font-size: 13px; color: var(--soft); background: #fff; z-index: 5; }
+  footer { position: fixed; bottom: 0; inset-inline: 0; height: 48px; border-top: 1px solid var(--line); display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; padding: 0 20px; font-size: 13px; color: var(--soft); background: #fff; z-index: 5; }
   footer .hint { display: flex; align-items: center; gap: 10px; }
   footer .hint::before { content: ""; width: 6px; height: 6px; background: var(--ink); }
-  footer .end { text-align: end; }
+  .strip { display: flex; gap: 6px; justify-self: end; overflow-x: auto; max-width: 100%; padding: 4px 2px; scrollbar-width: none; direction: rtl; touch-action: pan-x; }
+  .strip::-webkit-scrollbar { display: none; }
+  .strip .pg { display: flex; gap: 1px; padding: 0; border: 1px solid #ddd; background: #fff; cursor: pointer; flex: none; opacity: .55; transition: opacity .2s, border-color .2s; }
+  .strip .pg canvas { display: block; }
+  .strip .pg:hover { opacity: .85; }
+  .strip .pg.on { opacity: 1; border-color: var(--ink); }
   .prog { display: flex; align-items: center; gap: 12px; direction: ltr; color: var(--ink); font-variant-numeric: tabular-nums; }
   .prog .track { position: relative; width: min(260px, 32vw); height: 22px; cursor: pointer; }
   .prog .track::before { content: ""; position: absolute; inset-inline: 0; top: 50%; height: 1px; background: #cfcfcf; }
@@ -83,7 +88,7 @@
   @media (max-width: 720px) {
     :root { --bar: 60px; }
     header { padding: 0 14px; } .tools .wide { display: none; }
-    footer { grid-template-columns: 1fr; justify-items: center; } footer .hint, footer .end { display: none; }
+    footer { grid-template-columns: 1fr; justify-items: center; } footer .hint, footer .strip { display: none; }
     .arrow.l { left: 10px; } .arrow.r { right: 10px; }
   }
   @media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition-duration: .01s !important; } }
@@ -92,7 +97,7 @@
 <body data-state="front">
 <header>
   <div class="brand">
-    <svg viewBox="0 0 28 28" fill="none" stroke-linejoin="round"><defs><linearGradient id="bk" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FFE27A"/><stop offset=".5" stop-color="#FFC83A"/><stop offset="1" stop-color="#F4A62A"/></linearGradient></defs><path d="M9 4.5 23 2.5v19l-14 2z" fill="url(#bk)" stroke="#16140f" stroke-width="1.2"/><path d="M6 6.5 9 4.5v19l-3 2z" fill="#F2B030" stroke="#16140f" stroke-width="1.2"/><path d="M9.6 23.9 23 21.8M10.2 24.9 23.4 22.8" stroke="#16140f" stroke-width=".9" opacity=".55"/></svg>
+    <svg viewBox="0 0 28 28" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"><path d="M14.5 4.5 L23.6 9.8 L23.6 22.8 L20.1 24.8 L11.0 19.5 L11.0 6.5 Z"/><path d="M20.1 11.8 L23.6 9.8 M20.1 11.8 L11.0 6.5 M20.1 11.8 L20.1 24.8"/><path d="M11.0 9.1 L20.1 14.3 M11.0 10.7 L20.1 15.9" stroke-width="1" opacity=".6"/></svg>
     <span>{{name}}</span>
   </div>
   <nav class="tools">
@@ -118,7 +123,7 @@
     <div class="track" id="track"><div class="fill" id="fill"></div></div>
     <span id="pb">3</span>
   </div>
-  <span class="end">{{top}}</span>
+  <div class="strip" id="strip" aria-label="pages"></div>
 </footer>
 
 <div class="tvqr" aria-hidden="true">

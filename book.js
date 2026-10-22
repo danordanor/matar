@@ -104,6 +104,7 @@ async function faces() {
     txt(g, T.credit, sx(w), h - M, 28, 400, SUBL);
   };
   const dark = (g, w, h) => { g.fillStyle = "#232220"; g.fillRect(0, 0, w, h); };
+  const black = (g, w, h) => { g.fillStyle = "#000"; g.fillRect(0, 0, w, h); };
   const paperCache = {};
   const paper = (g, w, h) => {
     const key = w + "x" + h;
@@ -201,8 +202,8 @@ async function faces() {
     [{ kind: "front", draw: front, hard: true }, scatter],
     [blessing(parents), blessing(meidan)],
     [blessing(iyar), duoPage(DUO.slice(0, 9), 1)],
-    [duoPage(DUO.slice(9), 2), { kind: "inner", draw: dark }],
-    [{ kind: "inner", draw: dark, film: true }, after[0]],     // FILM: the video spans this spread
+    [duoPage(DUO.slice(9), 2), { kind: "inner", draw: black }],
+    [{ kind: "inner", draw: black, film: true }, after[0]],     // FILM: the video spans this spread
     ...pairs,
     [{ kind: "inner", draw: dark, hard: true }, { kind: "back", draw: back, hard: true }],
   ];
@@ -239,11 +240,13 @@ function makeLeaf(f, i, n) {
   for (let c = 0; c <= COLS; c++) for (let r = 0; r < 2; r++) { const k = c * 2 + r; uv[k * 2] = c / COLS; uv[k * 2 + 1] = r; }
   for (let c = 0; c < COLS; c++) { const a = c * 2, b = a + 1, d = a + 2, e = a + 3; if (S > 0) idx.push(a, d, b, b, d, e); else idx.push(a, b, d, b, e, d); }
   geo.setIndex(idx); geo.setAttribute("position", new THREE.BufferAttribute(pos, 3)); geo.setAttribute("uv", new THREE.BufferAttribute(uv, 2));
+  const canv = [];
   const tex = (face, mirror) => {
     const c = document.createElement("canvas"); c.width = TEX_W; c.height = Math.round(c.width * h / w); const g = c.getContext("2d"); if (mirror) { g.translate(c.width, 0); g.scale(-1, 1); }
     face.draw(g, c.width, c.height, 0);
     const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = renderer.capabilities.getMaxAnisotropy();
     if (face.live) live.push({ face, g, c, t, leaf: i });
+    canv.push({ c, mirror });
     return t;
   };
   const mf = new THREE.MeshStandardMaterial({ map: tex(f[0], S < 0), roughness: hard ? .85 : .95, side: THREE.FrontSide });
@@ -252,7 +255,7 @@ function makeLeaf(f, i, n) {
   a.castShadow = b.castShadow = true; a.receiveShadow = b.receiveShadow = true;
   a.userData = { kind: f[0].kind, leaf: i, side: 0 }; b.userData = { kind: f[1].kind, leaf: i, side: 1 };
   book.add(a, b);
-  const L = { i, n, w, h, hard, geo, p: 0, meshes: [a, b] }; place(L, 0); return L;
+  const L = { i, n, w, h, hard, geo, p: 0, meshes: [a, b], canv }; place(L, 0); return L;
 }
 const zOf = (L, p) => (1 - p) * (L.n - L.i) * PGAP + p * (L.i + 1) * PGAP;
 function place(L, p) {
@@ -279,7 +282,7 @@ else video.src = SRC;
 const vtex = new THREE.VideoTexture(video); vtex.colorSpace = THREE.SRGBColorSpace;
 const ptex = new THREE.TextureLoader().load(`${BASE}poster.jpg`); ptex.colorSpace = THREE.SRGBColorSpace;
 const filmMat = new THREE.MeshBasicMaterial({ map: ptex, transparent: true, opacity: 0, toneMapped: false });
-const FILM_W = 2 * W * .96, FILM_H = FILM_W * 9 / 16;
+const FILM_W = 2 * W, FILM_H = FILM_W * 9 / 16;
 const film = new THREE.Mesh(new THREE.PlaneGeometry(FILM_W, FILM_H), filmMat);
 film.userData.kind = "film"; book.add(film); window.__book = { film, filmMat, ptex, get leaves() { return leaves; } };
 video.addEventListener("playing", () => { filmMat.map = vtex; filmMat.needsUpdate = true; }, { once: true });
@@ -296,7 +299,7 @@ const body = document.body, hint = $("hint");
 const name = (s) => s === 0 ? "front" : s === END ? "back" : s === FILM ? "open" : "pages";
 function go(s, opts = {}) {
   state = clamp(s, 0, END);
-  body.dataset.state = name(state);
+  body.dataset.state = name(state); if (strip.children.length) markStrip();
   hint.textContent = hint.dataset[name(state)] || hint.dataset.open;
   $("left").disabled = RTL ? state === END : state === 0;
   $("right").disabled = RTL ? state === 0 : state === END;
@@ -432,6 +435,31 @@ addEventListener("keydown", (e) => {
   else if (e.key === "Escape") { if (isFull()) setFull(false); else go(0); }
 });
 
+// ---------- the page strip in the bottom bar: every spread as a small thumbnail; click or drag along it ----------
+const strip = $("strip");
+function thumb(entry, hgt) {
+  const { c, mirror } = entry, t = document.createElement("canvas"); t.height = hgt; t.width = Math.round(hgt * c.width / c.height);
+  const g = t.getContext("2d"); if (mirror) { g.translate(t.width, 0); g.scale(-1, 1); } g.drawImage(c, 0, 0, t.width, t.height); return t;
+}
+function buildStrip() {
+  strip.innerHTML = "";
+  const H0 = 26;
+  for (let k = 0; k <= END; k++) {
+    const el = document.createElement("button"); el.className = "pg"; el.dataset.k = k; el.setAttribute("aria-label", "page " + k);
+    // closed: one board. open: the two facing pages, in reading order
+    const faces = k === 0 ? [leaves[0].canv[0]] : k === END ? [leaves[END - 1].canv[1]] : (RTL ? [leaves[k].canv[0], leaves[k - 1].canv[1]] : [leaves[k - 1].canv[1], leaves[k].canv[0]]);
+    faces.forEach((f) => el.appendChild(thumb(f, H0)));
+    el.addEventListener("click", () => go(k));
+    strip.appendChild(el);
+  }
+  let sd = false;
+  const at = (e) => { const t = document.elementFromPoint(e.clientX, e.clientY)?.closest(".pg"); if (t && +t.dataset.k !== state) go(+t.dataset.k); };
+  strip.addEventListener("pointerdown", (e) => { sd = true; strip.setPointerCapture(e.pointerId); at(e); });
+  strip.addEventListener("pointermove", (e) => { if (sd) at(e); });
+  strip.addEventListener("pointerup", () => { sd = false; }); strip.addEventListener("pointercancel", () => { sd = false; });
+}
+function markStrip() { strip.querySelectorAll(".pg").forEach((el) => el.classList.toggle("on", +el.dataset.k === state)); const on = strip.querySelector(".pg.on"); if (on) on.scrollIntoView({ block: "nearest", inline: "nearest", behavior: "smooth" }); }
+
 // ---------- frame ----------
 function fit() {
   const w = host.clientWidth, h = host.clientHeight, pr = renderer.getPixelRatio();
@@ -485,6 +513,7 @@ function frame() {
 (async () => {
   await Promise.race([new Promise((r) => setTimeout(r, 2500)), Promise.all([document.fonts.load(`500 100px "${FONT}"`, "מטר Matar"), document.fonts.load(`400 30px "${FONT}"`, "מטר Matar"), document.fonts.load(`400 40px "${HAND}"`, "מטר, Matar")]).catch(() => {})]);
   const F = await faces(); F.forEach((f, i) => leaves.push(makeLeaf(f, i, F.length))); END = F.length; FILM = F.findIndex((f) => f[0].film); WISHES = F.length;
+  buildStrip();
   go(0); camera.position.set(0, 0, fit() * 1.3);
   body.classList.add("ready");
   frame();
