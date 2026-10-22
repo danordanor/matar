@@ -39,10 +39,10 @@
   .stack::before, .stack::after { content: ""; position: absolute; left: 0; right: 0; top: 0; bottom: 0; background: #fff; border-radius: 30px; transform-origin: 50% 0; }
   .stack::before { transform: translateY(-22px) scale(.86); opacity: .45; }
   .stack::after { transform: translateY(-11px) scale(.93); opacity: .7; box-shadow: 0 10px 30px -18px rgba(40,30,10,.3); }
-  .card { position: relative; z-index: 1; background: #fff; border-radius: 30px; padding: 10px 10px 12px;
+  .card { position: relative; z-index: 1; background: #fff; border-radius: 30px; padding: 4px;
           box-shadow: 0 30px 50px -28px rgba(40, 30, 10, .45), 0 0 0 1px rgba(0,0,0,.04); }
 
-  .photo { position: relative; aspect-ratio: 1 / 1; border-radius: 22px; overflow: hidden; background: #f1eee7; cursor: pointer; }
+  .photo { position: relative; aspect-ratio: 1 / 1; border-radius: 26px; overflow: hidden; background: #f1eee7; cursor: pointer; }
   .photo input { position: absolute; inset: 0; opacity: 0; cursor: pointer; z-index: 3; }
   .photo .hint { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; text-align: center; transition: opacity .3s; }
   .photo .hint svg { width: 86px; height: 86px; }
@@ -63,20 +63,20 @@
   .photo .tag { position: absolute; bottom: 8px; right: 8px; z-index: 4; display: none; padding: 4px 9px; border-radius: 999px; background: rgba(22,20,15,.6); color: #fff; font-size: 12px; backdrop-filter: blur(6px); }
   .photo.vid .tag { display: block; }
 
-  .write { padding: 12px 6px 0; }
+  .write { padding: 14px 14px 0; }
   .hand { font-family: "Hand", "Swiss", cursive; color: var(--pen); background: transparent; border: 0; outline: none; width: 100%; -webkit-appearance: none; border-radius: 0; display: block; }
   .hand::placeholder { color: rgba(31,45,90,.28); }
   .msg { font-size: 21px; line-height: 1.45; min-height: 62px; max-height: 26svh; resize: none; overflow: auto; }
   .name { font-size: 19px; line-height: 1.3; margin-top: 4px; text-align: left; }
   .name::placeholder { text-align: left; }
 
-  .send { margin: 12px 0 0; width: 100%; height: 46px; background: transparent; color: var(--ink); border: 1.5px solid rgba(22,20,15,.22); border-radius: 999px; font-size: 14px; font-weight: 500; cursor: pointer;
+  .send { margin: 14px -10px 0; width: calc(100% + 20px); height: 46px; background: transparent; color: var(--ink); border: 1.5px solid rgba(22,20,15,.22); border-radius: 999px; font-size: 14px; font-weight: 500; cursor: pointer;
           transition: background .3s, color .3s, border-color .3s, transform .3s var(--ease); }
   .send.ready { background: var(--ink); color: #fff; border-color: var(--ink); }
   .send:active { transform: scale(.98); }
   .send[disabled] { opacity: .45; cursor: default; }
   /* first: how would you like to bless? */
-  .ask { padding: 24px 10px 12px; }
+  .ask { padding: 26px 16px 16px; }
   .ask h2 { font-weight: 500; font-size: 20px; letter-spacing: -.01em; text-align: center; }
   .ask p { text-align: center; font-size: 13px; color: var(--soft); margin-top: 2px; }
   .ways { display: grid; gap: 8px; margin-top: 18px; }
@@ -89,8 +89,10 @@
   .card.step2 .ask { display: none; }
   .card:not(.step2) .photo, .card:not(.step2) .write { display: none; }
   .card.text .photo { display: none; }
-  .card.text .msg { min-height: 150px; } .card.text .write { padding-top: 20px; }
-  .back { display: block; margin: 10px auto 0; background: none; border: 0; font-size: 12px; color: var(--soft); cursor: pointer; }
+  .card.text .msg { min-height: 150px; } .card.text .write { padding-top: 26px; }
+  .card.text .x { display: grid; }
+  .x { position: absolute; top: 12px; left: 12px; z-index: 4; width: 30px; height: 30px; border-radius: 50%; border: 0; background: #f1eee7; color: var(--ink); display: none; place-items: center; cursor: pointer; font-size: 13px; }
+  .back { display: none; }
   .err { color: #b3261e; font-size: 13px; margin-top: 10px; text-align: center; }
   .err:empty { display: none; }
 
@@ -103,6 +105,7 @@
 <body>
 <div class="stack"><div class="card">
 <form id="f" novalidate>
+  <button type="button" class="x" id="x" aria-label="חזרה">✕</button>
   <div class="ask">
     <h2>איך תרצו לברך?</h2>
     <p>ברכה קצרה למטר, לספר שלו</p>
@@ -156,6 +159,7 @@
   const step2 = (kind) => { card.classList.add("step2"); card.classList.toggle("text", kind === "text"); if (kind === "text") setTimeout(() => msg.focus(), 50); ready(); };
   const ready = () => send.classList.toggle("ready", !!(nameEl.value.trim() && msg.value.trim()));
   $("wText").addEventListener("click", () => step2("text"));
+  $("x").addEventListener("click", () => $("clear").click());
   $("back").addEventListener("click", () => { card.classList.remove("step2", "text"); $("clear").click(); });
   nameEl.addEventListener("input", ready);
 
