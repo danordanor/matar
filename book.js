@@ -397,7 +397,7 @@ const fmt = (s) => { s = Math.max(0, Math.floor(s || 0)); return Math.floor(s / 
 const pa = $("pa"), pb = $("pb"), fill = $("fill"), track = $("track");
 function bar() {
   if (state === FILM) {
-    const d = video.duration || 158.6;
+    const d = video.duration || 169.9;
     pa.textContent = fmt(video.currentTime); pb.textContent = fmt(d);
     fill.style.width = clamp(video.currentTime / d) * 100 + "%"; fill.classList.add("thick");
   } else { pa.textContent = state === 0 ? T.p_front : state === END ? T.p_back : "עמוד " + state; pb.textContent = ""; fill.style.width = state / END * 100 + "%"; fill.classList.remove("thick"); }
