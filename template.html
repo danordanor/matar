@@ -184,11 +184,14 @@
   // the book stays closed to guests until the bar mitzvah; the blessing page is open.
   // Danor opens it early with ?peek=OPEN_KEY (remembered on that device), and ?lock resets it.
   const LAUNCH = new Date("{{launch}}"), q = new URLSearchParams(location.search);
-  if (q.has("lock")) localStorage.removeItem("peek");
-  if (q.get("peek") === "{{peek}}") localStorage.setItem("peek", "1");
-  if (Date.now() < LAUNCH && localStorage.getItem("peek") !== "1") {
+  const store = (k, v) => { try { if (v === undefined) return localStorage.getItem(k); v === null ? localStorage.removeItem(k) : localStorage.setItem(k, v); } catch (e) {} };
+  if (q.has("lock")) { store("peek", null); document.cookie = "peek=; max-age=0; path=/"; }
+  const key = q.get("peek") === "{{peek}}";
+  if (key) { store("peek", "1"); document.cookie = "peek=1; max-age=31536000; path=/; SameSite=Lax"; }
+  const open = key || store("peek") === "1" || /(^|; )peek=1/.test(document.cookie) || Date.now() >= LAUNCH;
+  if (!open) {
     document.getElementById("lock").hidden = false; document.body.classList.add("locked");
-    const s = document.querySelector('script[src$="book.js"], script[type=module]'); if (s) s.remove();
+    const s = document.querySelector('script[type=module]'); if (s) s.remove();
     window.LOCKED = true;
   }
 })();
