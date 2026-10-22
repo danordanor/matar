@@ -23,7 +23,8 @@
   :root { --ink: #16140f; --pen: #1f2d5a; --soft: #9a948a; --ease: cubic-bezier(.22, 1, .36, 1); }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   html { background: #f3f1ec; }
-  body { font-family: "Swiss", system-ui, sans-serif; color: var(--ink); -webkit-font-smoothing: antialiased; min-height: 100svh; display: grid; place-items: center; padding: 36px 20px 28px;
+  html, body { height: 100%; overflow: hidden; }
+  body { font-family: "Swiss", system-ui, sans-serif; color: var(--ink); -webkit-font-smoothing: antialiased; display: grid; place-items: center; padding: 20px;
          background: linear-gradient(160deg, #f8f7f3, #efece5); position: relative; isolation: isolate; }
   body::before, body::after { content: ""; position: fixed; z-index: -1; border-radius: 50%; filter: blur(70px); pointer-events: none; will-change: transform; }
   body::before { width: 70vmax; height: 70vmax; top: -30vmax; right: -20vmax; background: rgba(255,210,74,.42); animation: driftA 38s ease-in-out infinite alternate; }
@@ -75,8 +76,8 @@
   .send:active { transform: scale(.98); }
   .send[disabled] { opacity: .45; cursor: default; }
   /* first: how would you like to bless? */
-  .ask { padding: 18px 8px 8px; }
-  .ask h2 { font-family: "Hand", cursive; font-weight: 400; color: var(--pen); font-size: 30px; text-align: center; }
+  .ask { padding: 24px 10px 12px; }
+  .ask h2 { font-weight: 500; font-size: 20px; letter-spacing: -.01em; text-align: center; }
   .ask p { text-align: center; font-size: 13px; color: var(--soft); margin-top: 2px; }
   .ways { display: grid; gap: 8px; margin-top: 18px; }
   .ways label, .ways button { position: relative; display: flex; align-items: center; gap: 12px; height: 56px; padding: 0 8px 0 18px; border-radius: 999px; background: #f6f4ef; border: 0; text-align: right; font-size: 15px; font-weight: 500; cursor: pointer; transition: transform .25s var(--ease), background .25s; width: 100%; }
@@ -88,6 +89,7 @@
   .card.step2 .ask { display: none; }
   .card:not(.step2) .photo, .card:not(.step2) .write { display: none; }
   .card.text .photo { display: none; }
+  .card.text .msg { min-height: 150px; } .card.text .write { padding-top: 20px; }
   .back { display: block; margin: 10px auto 0; background: none; border: 0; font-size: 12px; color: var(--soft); cursor: pointer; }
   .err { color: #b3261e; font-size: 13px; margin-top: 10px; text-align: center; }
   .err:empty { display: none; }
