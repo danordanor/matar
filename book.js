@@ -361,6 +361,9 @@ $("full").onclick = (e) => { e.stopPropagation(); setFull(!isFull()); };
 const fsChange = () => { if (!document.fullscreenElement && !document.webkitFullscreenElement && isFull() && !TV) document.body.classList.remove("full"); };
 document.addEventListener("fullscreenchange", fsChange); document.addEventListener("webkitfullscreenchange", fsChange);
 video.addEventListener("ended", () => setTimeout(() => { if (state === FILM) go(FILM + 1); }, 700));
+const watchTxt = $("watchTxt");
+const syncWatch = () => { const on = !video.paused && !video.ended; body.classList.toggle("playing", on); watchTxt.textContent = on ? T.pause : T.play; };
+["play", "pause", "ended"].forEach((ev) => video.addEventListener(ev, syncWatch));
 
 // status bar line: film time when open, place in the book otherwise
 const fmt = (s) => { s = Math.max(0, Math.floor(s || 0)); return Math.floor(s / 60) + ":" + String(s % 60).padStart(2, "0"); };

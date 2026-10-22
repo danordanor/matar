@@ -37,6 +37,8 @@
   .b.dark { background: var(--ink); color: #fff; border-color: var(--ink); }
   .b.icon { padding: 0; width: 40px; }
   .b svg { width: 16px; height: 16px; }
+  #watch .ic-pause, .playing #watch .ic-play { display: none; }
+  .playing #watch .ic-pause { display: block; }
 
   /* stage */
   #book { position: fixed; top: var(--bar); bottom: 48px; inset-inline: 0; opacity: 0; transition: opacity 1.4s var(--ease); }
@@ -62,7 +64,7 @@
   .strip .pg canvas { display: block; }
   .strip .pg:hover { opacity: .85; }
   .strip .pg.on { opacity: 1; border-color: var(--ink); outline-color: var(--ink); }
-  .prog { display: flex; align-items: center; gap: 12px; direction: ltr; color: var(--ink); font-variant-numeric: tabular-nums; }
+  .prog { display: flex; align-items: center; gap: 12px; direction: rtl; color: var(--ink); font-variant-numeric: tabular-nums; }
   .prog .track { position: relative; width: min(260px, 32vw); height: 22px; cursor: pointer; }
   .prog .track::before { content: ""; position: absolute; inset-inline: 0; top: 50%; height: 1px; background: #cfcfcf; }
   .prog .fill { position: absolute; left: 0; top: 50%; height: 1px; margin-top: 0; background: var(--ink); width: 0; }
@@ -105,7 +107,7 @@
   <nav class="tools">
     <button class="b icon" id="full" aria-label="מסך מלא"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M2 6V2h4M10 2h4v4M14 10v4h-4M6 14H2v-4"/></svg></button>
     <a class="b" href="add/">הוסיפו ברכה</a>
-    <button class="b dark" id="watch"><svg viewBox="0 0 16 16" fill="currentColor"><path d="M4 2.5v11L13 8z"/></svg>לצפייה בסרטון</button>
+    <button class="b dark" id="watch"><svg class="ic-play" viewBox="0 0 16 16" fill="currentColor"><path d="M4 2.5v11L13 8z"/></svg><svg class="ic-pause" viewBox="0 0 16 16" fill="currentColor"><rect x="3.5" y="2.5" width="3" height="11"/><rect x="9.5" y="2.5" width="3" height="11"/></svg><span id="watchTxt">לצפייה בסרטון</span></button>
   </nav>
 </header>
 
@@ -136,8 +138,8 @@
 
 <video id="film" playsinline preload="auto" poster="poster.jpg"></video>
 
-<script>window.BOOK = {"name": "מטר", "sub": "תראו אותו גדל", "label": "בר מצווה", "credit": "באהבה, אמא, אבא, מידן ואייר", "line1": "שלוש עשרה שנים. סרטון אחד.", "story": "הוא הגיע אלינו קטן, גדל בבריכות, בנחלים ועל טרמפולינות, מוקף באנשים שאוהבים אותו. ועכשיו הוא בן שלוש עשרה.", "next": "לסרטון", "blurbLabel": "תקציר", "blurb": "מהבטן של אמא, דרך המגבת האדומה, הבריכות, הנחלים והטרמפולינות, ועד היום שבו הוא עולה לתורה. כל התמונות שצילמנו לאורך השנים חוזרות לחיים, בסרטון אחד.", "bless": [{"label": "מאמא ואבא", "title": "מטר שלנו,", "body": "שלוש עשרה שנים שאנחנו מסתכלים עליך גדל, ומתרגשים מחדש כל יום. אתה סקרן, מצחיק, אמיץ ועם לב ענק. תמשיך לטפס גבוה, לשאול שאלות ולהיות בדיוק מי שאתה. אנחנו תמיד פה, מאחוריך.", "sign": "מזל טוב, אמא ואבא"}, {"label": "ממידן", "title": "מטר,", "photo": "f/72.jpg", "body": "אתה האח הכי טוב בעולם. תודה שאתה משחק איתי ומצחיק אותי. אני אוהב אותך המון.", "sign": "מזל טוב, מידן"}, {"label": "מאייר", "title": "אחי,", "photo": "d/01.jpg", "body": "אחי הקטן כבר לא כל כך קטן. תודה על כל הצחוקים, המשחקים והריבים שנגמרים בצחוק. אני גאה בך ותמיד אהיה בשבילך.", "sign": "מזל טוב, אייר"}], "duo": "מטר ואייר", "fromLabel": "ברכה מאת", "inviteLabel": "ספר הברכות", "invite1": "גם אתם", "invite2": "רוצים לברך?", "inviteUrl": "danor.studio/matar/add", "again": "לצפייה שוב", "p_front": "כריכה", "p_page": "עמוד 1", "p_back": "תקציר", "dir": "rtl", "base": ""};</script>
+<script>window.BOOK = {"name": "מטר", "sub": "תראו אותו גדל", "label": "בר מצווה", "credit": "באהבה, אמא, אבא, מידן ואייר", "line1": "שלוש עשרה שנים. סרטון אחד.", "story": "הוא הגיע אלינו קטן, גדל בבריכות, בנחלים ועל טרמפולינות, מוקף באנשים שאוהבים אותו. ועכשיו הוא בן שלוש עשרה.", "next": "לסרטון", "blurbLabel": "תקציר", "blurb": "מהבטן של אמא, דרך המגבת האדומה, הבריכות, הנחלים והטרמפולינות, ועד היום שבו הוא עולה לתורה. כל התמונות שצילמנו לאורך השנים חוזרות לחיים, בסרטון אחד.", "bless": [{"label": "מאמא ואבא", "title": "מטר שלנו,", "body": "שלוש עשרה שנים שאנחנו מסתכלים עליך גדל, ומתרגשים מחדש כל יום. אתה סקרן, מצחיק, אמיץ ועם לב ענק. תמשיך לטפס גבוה, לשאול שאלות ולהיות בדיוק מי שאתה. אנחנו תמיד פה, מאחוריך.", "sign": "מזל טוב, אמא ואבא"}, {"label": "ממידן", "title": "מטר,", "photo": "f/72.jpg", "body": "אתה האח הכי טוב בעולם. תודה שאתה משחק איתי ומצחיק אותי. אני אוהב אותך המון.", "sign": "מזל טוב, מידן"}, {"label": "מאייר", "title": "אחי,", "photo": "d/01.jpg", "body": "אחי הקטן כבר לא כל כך קטן. תודה על כל הצחוקים, המשחקים והריבים שנגמרים בצחוק. אני גאה בך ותמיד אהיה בשבילך.", "sign": "מזל טוב, אייר"}], "duo": "מטר ואייר", "fromLabel": "ברכה מאת", "inviteLabel": "ספר הברכות", "invite1": "גם אתם", "invite2": "רוצים לברך?", "inviteUrl": "danor.studio/matar/add", "again": "לצפייה שוב", "p_front": "כריכה", "p_page": "עמוד 1", "p_back": "תקציר", "dir": "rtl", "base": "", "play": "לצפייה בסרטון", "pause": "השהיית הסרטון"};</script>
 <script src="lib/hls.min.js"></script>
-<script type="module" src="book.js?v=1792669158"></script>
+<script type="module" src="book.js?v=1792670738"></script>
 </body>
 </html>

@@ -37,6 +37,8 @@
   .b.dark { background: var(--ink); color: #fff; border-color: var(--ink); }
   .b.icon { padding: 0; width: 40px; }
   .b svg { width: 16px; height: 16px; }
+  #watch .ic-pause, .playing #watch .ic-play { display: none; }
+  .playing #watch .ic-pause { display: block; }
 
   /* stage */
   #book { position: fixed; top: var(--bar); bottom: 48px; inset-inline: 0; opacity: 0; transition: opacity 1.4s var(--ease); }
@@ -62,7 +64,7 @@
   .strip .pg canvas { display: block; }
   .strip .pg:hover { opacity: .85; }
   .strip .pg.on { opacity: 1; border-color: var(--ink); outline-color: var(--ink); }
-  .prog { display: flex; align-items: center; gap: 12px; direction: ltr; color: var(--ink); font-variant-numeric: tabular-nums; }
+  .prog { display: flex; align-items: center; gap: 12px; direction: rtl; color: var(--ink); font-variant-numeric: tabular-nums; }
   .prog .track { position: relative; width: min(260px, 32vw); height: 22px; cursor: pointer; }
   .prog .track::before { content: ""; position: absolute; inset-inline: 0; top: 50%; height: 1px; background: #cfcfcf; }
   .prog .fill { position: absolute; left: 0; top: 50%; height: 1px; margin-top: 0; background: var(--ink); width: 0; }
@@ -105,7 +107,7 @@
   <nav class="tools">
     <button class="b icon" id="full" aria-label="{{full}}"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M2 6V2h4M10 2h4v4M14 10v4h-4M6 14H2v-4"/></svg></button>
     <a class="b" href="{{base}}add/">{{add}}</a>
-    <button class="b dark" id="watch"><svg viewBox="0 0 16 16" fill="currentColor"><path d="M4 2.5v11L13 8z"/></svg>{{play}}</button>
+    <button class="b dark" id="watch"><svg class="ic-play" viewBox="0 0 16 16" fill="currentColor"><path d="M4 2.5v11L13 8z"/></svg><svg class="ic-pause" viewBox="0 0 16 16" fill="currentColor"><rect x="3.5" y="2.5" width="3" height="11"/><rect x="9.5" y="2.5" width="3" height="11"/></svg><span id="watchTxt">{{play}}</span></button>
   </nav>
 </header>
 

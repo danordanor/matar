@@ -5,7 +5,7 @@ import json, os
 L = dict(
   lang="he", dir="rtl", base="", out="index.html",
   title="מטר", desc="תראו אותו גדל.", name="מטר", top="מטר · בר מצווה",
-  play="לצפייה בסרטון", full="מסך מלא", open_book="פתחו את הספר", close_book="סגירת הספר",
+  play="לצפייה בסרטון", pause="השהיית הסרטון", full="מסך מלא", open_book="פתחו את הספר", close_book="סגירת הספר",
   hint="לחצו על הכריכה כדי להתחיל", hint_open="גררו את הדף · חיצים לדפדוף", hint_back="לחצו על הספר כדי לצפות שוב",
   p_front="כריכה", add="הוסיפו ברכה", tv_qr1="רוצים להוסיף ברכה?", tv_qr2="סרקו, כתבו ברכה והוסיפו תמונה", tv_start="הפעלת הספר",
   book=dict(name="מטר", sub="תראו אותו גדל", label="בר מצווה", credit="באהבה, אמא, אבא, מידן ואייר",
@@ -30,11 +30,11 @@ L = dict(
             again="לצפייה שוב", p_front="כריכה", p_page="עמוד 1", p_back="תקציר"),
 )
 
-KEYS = ["lang", "dir", "base", "title", "desc", "name", "top", "play", "full",
+KEYS = ["lang", "dir", "base", "title", "desc", "name", "top", "play", "pause", "full",
         "open_book", "close_book", "hint", "hint_open", "hint_back", "p_front", "add", "tv_qr1", "tv_qr2", "tv_start"]
 HERE = os.path.dirname(os.path.abspath(__file__))
 html = open(os.path.join(HERE, "template.html"), encoding="utf-8").read()
-b = dict(L["book"]); b.update(dir=L["dir"], base=L["base"])
+b = dict(L["book"]); b.update(dir=L["dir"], base=L["base"], play=L["play"], pause=L["pause"])
 for k in KEYS: html = html.replace("{{" + k + "}}", L[k])
 import time; V = str(int(time.time()))
 html = html.replace("book.js\"", "book.js?v=" + V + "\"")
