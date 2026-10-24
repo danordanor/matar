@@ -93,19 +93,28 @@
   .full.quiet #book canvas { cursor: none; }
   /* loading: a small book whose pages keep turning, until the real one is ready */
   /* a guest's blessing, enlarged */
-  .wc { position: fixed; inset: 0; z-index: 25; background: rgba(20,18,14,.55); backdrop-filter: blur(8px); display: grid; place-items: center; padding: 20px; opacity: 0; transition: opacity .25s; }
-  .wc[hidden] { display: none; } .wc.in { opacity: 1; }
-  .wcard { position: relative; width: min(380px, 100%); max-height: 92svh; overflow: auto; background: #fff; border-radius: 30px; padding: 6px 6px 18px; box-shadow: 0 40px 80px -30px rgba(0,0,0,.5);
-           transform: scale(.92) translateY(10px); transition: transform .35s cubic-bezier(.22,1,.36,1); }
-  .wc.in .wcard { transform: none; }
-  .wmedia { border-radius: 24px; overflow: hidden; background: #f1eee7; }
-  .wmedia img, .wmedia video { display: block; width: 100%; max-height: 62svh; object-fit: cover; }
+  .wc { position: fixed; inset: 0; z-index: 25; background: rgba(20,18,14,0); backdrop-filter: blur(0); display: grid; place-items: center; padding: 20px; transition: background .35s, backdrop-filter .35s; }
+  .wc[hidden] { display: none; } .wc.in { background: rgba(20,18,14,.5); backdrop-filter: blur(10px); }
+  .wcard { position: relative; max-width: 100%; max-height: 92svh; overflow: auto; background: #fff; border-radius: 30px; padding: 6px 6px 20px;
+           opacity: 0; transform: scale(.4); transition: transform .5s cubic-bezier(.2,1.2,.35,1), opacity .25s; }
+  .wc.in .wcard { opacity: 1; transform: none; }
+  .wmedia { position: relative; border-radius: 24px; overflow: hidden; background: linear-gradient(100deg, #f1eee7 30%, #faf8f3 50%, #f1eee7 70%); background-size: 300% 100%; animation: shimmer 1.4s linear infinite; }
+  .wmedia.ready { animation: none; background: #f1eee7; }
+  @keyframes shimmer { from { background-position: 100% 0; } to { background-position: -100% 0; } }
+  .wmedia img, .wmedia video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; }
+  .wmedia img { opacity: 1; } .wmedia video { opacity: 0; transition: opacity .5s; }
+  .wmedia.playing video { opacity: 1; }
   .wmedia img[hidden], .wmedia video[hidden] { display: none; }
-  .wc.textonly .wmedia { display: none; } .wc.textonly .wcard { padding-top: 26px; }
+  .wmedia .spin { position: absolute; left: 50%; top: 50%; width: 38px; height: 38px; margin: -19px; border-radius: 50%; border: 3px solid rgba(255,255,255,.5); border-top-color: #fff; animation: spin .8s linear infinite; display: none; }
+  .wmedia:not(.playing) video:not([hidden]) ~ .spin { display: block; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .wc.textonly .wmedia { display: none; } .wc.textonly .wcard { padding: 48px 34px 28px; width: max-content; min-width: 240px; max-width: min(440px, calc(100vw - 40px)); }
   .wmsg { font-family: "Hand", cursive; color: #1f2d5a; font-size: 24px; line-height: 1.45; padding: 16px 18px 0; white-space: pre-wrap; }
-  .wc.textonly .wmsg { font-size: 28px; }
   .wname { font-family: "Hand", cursive; color: #1f2d5a; font-size: 22px; padding: 12px 18px 0; text-align: left; }
-  .wx { position: absolute; top: 14px; left: 14px; width: 32px; height: 32px; border: 0; border-radius: 50%; background: rgba(22,20,15,.55); color: #fff; display: grid; place-items: center; font-size: 13px; cursor: pointer; backdrop-filter: blur(6px); z-index: 2; }
+  .wc.textonly .wmsg { font-size: 30px; text-align: center; padding: 0; }
+  .wc.textonly .wname { text-align: center; padding: 16px 0 0; }
+  .wx { position: absolute; top: 14px; left: 14px; width: 32px; height: 32px; padding: 0; border: 0; border-radius: 50%; background: rgba(22,20,15,.55); color: #fff; display: flex; align-items: center; justify-content: center; cursor: pointer; backdrop-filter: blur(6px); z-index: 2; }
+  .wx svg { display: block; }
   .wc.textonly .wx { background: #f1eee7; color: #16140f; }
   .loader { position: fixed; inset: 0; z-index: 20; background: #fff; display: grid; place-items: center; transition: opacity .6s var(--ease), visibility 0s linear .6s; }
   .ready .loader { opacity: 0; visibility: hidden; }
@@ -183,10 +192,10 @@
 <button class="tvstart" id="tvStart"><span>הפעלת הספר</span></button>
 
 <video id="film" playsinline preload="auto" poster="../poster.jpg"></video>
-<div class="wc" id="wc" hidden><div class="wcard"><div class="wmedia"><img alt=""><video playsinline loop></video></div><p class="wmsg"></p><p class="wname"></p><button class="wx" id="wcClose" aria-label="סגירה">✕</button></div></div>
+<div class="wc" id="wc" hidden><div class="wcard"><div class="wmedia"><img alt=""><video playsinline loop preload="auto"></video><i class="spin"></i></div><p class="wmsg"></p><p class="wname"></p><button class="wx" id="wcClose" aria-label="סגירה"><svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 4l8 8M12 4l-8 8"/></svg></button></div></div>
 
 <script>window.BOOK = {"name": "מטר", "sub": "תראו אותו גדל", "label": "בר מצווה", "credit": "באהבה, אמא, אבא, מידן ואייר", "line1": "שלוש עשרה שנים. סרטון אחד.", "story": "הוא הגיע אלינו קטן, גדל בבריכות, בנחלים ועל טרמפולינות, מוקף באנשים שאוהבים אותו. ועכשיו הוא בן שלוש עשרה.", "next": "לסרטון", "blurbLabel": "תקציר", "blurb": "מהבטן של אמא, דרך המגבת האדומה, הבריכות, הנחלים והטרמפולינות, ועד היום שבו הוא עולה לתורה. כל התמונות שצילמנו לאורך השנים חוזרות לחיים, בסרטון אחד.", "bless": [{"label": "מאמא ואבא", "title": "מטר שלנו,", "body": "שלוש עשרה שנים שאנחנו מסתכלים עליך גדל, ומתרגשים מחדש כל יום. אתה סקרן, מצחיק, אמיץ ועם לב ענק. תמשיך לטפס גבוה, לשאול שאלות ולהיות בדיוק מי שאתה. אנחנו תמיד פה, מאחוריך.", "sign": "מזל טוב, אמא ואבא"}, {"label": "ממידן", "title": "מטר,", "photo": "f/72.jpg", "body": "אתה האח הכי טוב בעולם. תודה שאתה משחק איתי ומצחיק אותי. אני אוהב אותך המון.", "sign": "מזל טוב, מידן"}, {"label": "מאייר", "title": "אחי,", "photo": "d/01.jpg", "body": "אחי הקטן כבר לא כל כך קטן. תודה על כל הצחוקים, המשחקים והריבים שנגמרים בצחוק. אני גאה בך ותמיד אהיה בשבילך.", "sign": "מזל טוב, אייר"}], "duo": "מטר ואייר", "fromLabel": "ברכה מאת", "inviteLabel": "ספר הברכות", "invite1": "גם אתם", "invite2": "רוצים לברך?", "inviteUrl": "danor.studio/matar/add", "again": "לצפייה שוב", "p_front": "כריכה", "p_page": "עמוד 1", "p_back": "תקציר", "dir": "rtl", "base": "../", "play": "לצפייה בסרטון", "pause": "השהיית הסרטון"};</script>
 <script src="../lib/hls.min.js"></script>
-<script type="module" src="../book.js?v=1792866639"></script>
+<script type="module" src="../book.js?v=1792867561"></script>
 </body>
 </html>

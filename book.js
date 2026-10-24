@@ -56,12 +56,17 @@ function txt(g, s, x, y, size, weight = 400, color = INKL, align = "start", trac
 }
 // handwritten lines: pen-blue ink, each line a touch uneven, like real writing on a page
 const HAND = "Hand", PEN = "#1f2d5a";
-function hand(g, s, x, y, maxW, size, lh, maxLines = 99, color = PEN) {
+function handLines(g, s, maxW, size) {
   g.save(); g.font = `400 ${size}px "${HAND}"`; g.direction = T.dir;
   const words = s.replace(/\s+/g, " ").trim().split(" "), lines = []; let line = "";
   for (const w of words) { const t = line ? line + " " + w : w; if (g.measureText(t).width > maxW && line) { lines.push(line); line = w; } else line = t; }
-  lines.push(line); if (lines.length > maxLines) { lines.length = maxLines; lines[maxLines - 1] += "…"; }
-  g.fillStyle = color; g.textAlign = "start"; g.textBaseline = "alphabetic";
+  lines.push(line); g.restore(); return lines;
+}
+function hand(g, s, x, y, maxW, size, lh, maxLines = 99, color = PEN, align = "start") {
+  const lines = handLines(g, s, maxW, size);
+  if (lines.length > maxLines) { lines.length = maxLines; lines[maxLines - 1] += "…"; }
+  g.save(); g.font = `400 ${size}px "${HAND}"`; g.direction = T.dir;
+  g.fillStyle = color; g.textAlign = align; g.textBaseline = "alphabetic";
   lines.forEach((l, i) => {
     const j = Math.sin(i * 2.3 + s.length) , k = Math.cos(i * 1.7 + s.length * .3);
     g.save(); g.translate(x + j * 6, y + i * lh + k * 3); g.rotate((j * .6) * Math.PI / 180); g.fillText(l, 0, 0); g.restore();
@@ -195,46 +200,80 @@ async function faces() {
   const wishImgs = await Promise.all(wishes.map((w) => w.photo_path ? loadImg(`${SB}/storage/v1/object/public/matar/${w.photo_path}`) : null));
   const qr = await loadImg(QR_SRC);
   coverPool = [...Object.values(IMG), ...DUO, ...wishImgs, ...blessImgs].filter(Boolean);
-  // a guest's blessing, drawn as a small card: media on top, the words, the name at the bottom
-  const PER = 4;
-  function wishCard(g, x, y, cw, ch, wsh, im, rot) {
-    g.save(); g.translate(x + cw / 2, y + ch / 2); g.rotate(rot * Math.PI / 180); g.translate(-cw / 2, -ch / 2);
-    g.shadowColor = "rgba(40,30,10,.18)"; g.shadowBlur = 26; g.shadowOffsetY = 10;
-    g.fillStyle = "#fff"; g.beginPath(); g.roundRect(0, 0, cw, ch, 30); g.fill();
-    g.shadowColor = "transparent";
-    const pad = 10, mw = cw - pad * 2; let ty = pad;
+  // a guest's blessing, drawn as a card sized by what is in it: the media's own proportion and the length of the words
+  const PAD = 10, NAME = 30;
+  const wordSize = (t, media) => media ? 31 : t.length < 40 ? 52 : t.length < 110 ? 44 : 36;
+  function measureCard(g, it, cw) {
+    const { w: wsh, im } = it, mw = cw - PAD * 2;
+    const ratio = im ? Math.min(1.35, Math.max(.62, im.height / im.width)) : 0;
+    const mh = im ? Math.round(mw * ratio) : 0;
+    const size = wordSize(wsh.message, !!im), lh = Math.round(size * 1.4);
+    const all = handLines(g, wsh.message, cw - 44, size), lines = Math.min(im ? 5 : 10, all.length);
+    let w = cw;
+    if (!im) {   // words only: the card is as wide as its longest line (and the name)
+      g.save(); g.font = `400 ${size}px "${HAND}"`; let lw = Math.max(...all.map((l) => g.measureText(l).width));
+      g.font = `400 ${NAME}px "${HAND}"`; lw = Math.max(lw, g.measureText(wsh.name).width); g.restore();
+      w = Math.round(Math.min(cw, Math.max(cw * .5, lw + 70)));
+    }
+    const body = (im ? PAD + mh + 26 : 44) + lines * lh, h = body + 22 + NAME + 22;
+    return { mh, size, lh, lines, h, w };
+  }
+  function wishCard(g, x, y, cw, m, it, rot) {
+    const { w: wsh, im } = it, mw = cw - PAD * 2;
+    x += (cw - m.w) / 2; cw = m.w;
+    g.save(); g.translate(x + cw / 2, y + m.h / 2); g.rotate(rot * Math.PI / 180); g.translate(-cw / 2, -m.h / 2);
+    g.fillStyle = "#fff"; g.beginPath(); g.roundRect(0, 0, cw, m.h, 30); g.fill();
+    g.strokeStyle = "rgba(22,20,15,.07)"; g.lineWidth = 2; g.stroke();          // a hairline instead of a shadow
+    let ty;
     if (im) {
-      const mh = mw;                                   // square media, cropped like the card on /add
-      g.save(); g.beginPath(); g.roundRect(pad, pad, mw, mh, 24); g.clip();
-      const k = Math.max(mw / im.width, mh / im.height), iw = im.width * k, ih = im.height * k;
-      g.drawImage(im, pad + (mw - iw) / 2, pad + (mh - ih) / 2, iw, ih); g.restore();
+      g.save(); g.beginPath(); g.roundRect(PAD, PAD, mw, m.mh, 24); g.clip();
+      const k = Math.max(mw / im.width, m.mh / im.height), iw = im.width * k, ih = im.height * k;
+      g.drawImage(im, PAD + (mw - iw) / 2, PAD + (m.mh - ih) / 2, iw, ih); g.restore();
       if (wsh.video_path) {
-        const cx = pad + mw / 2, cy = pad + mh / 2;
+        const cx = PAD + mw / 2, cy = PAD + m.mh / 2;
         g.fillStyle = "rgba(255,255,255,.92)"; g.beginPath(); g.arc(cx, cy, 34, 0, Math.PI * 2); g.fill();
         g.fillStyle = INK; g.beginPath(); g.moveTo(cx - 10, cy - 16); g.lineTo(cx + 17, cy); g.lineTo(cx - 10, cy + 16); g.closePath(); g.fill();
       }
-      ty += mh;
+      ty = PAD + m.mh + 26 + m.size * .8;
+      hand(g, wsh.message, RTL ? cw - 22 : 22, ty, cw - 44, m.size, m.lh, m.lines);
+      g.font = `400 ${NAME}px "${HAND}"`; const nw = Math.min(cw - 44, g.measureText(wsh.name).width);
+      hand(g, wsh.name, RTL ? 22 + nw : cw - 22, m.h - 24, cw - 44, NAME, NAME, 1);
+    } else {
+      // words only: centred, the card just as tall as they are
+      ty = 44 + m.size * .8;
+      hand(g, wsh.message, cw / 2, ty, cw - 44, m.size, m.lh, m.lines, PEN, "center");
+      hand(g, wsh.name, cw / 2, m.h - 24, cw - 44, NAME, NAME, 1, PEN, "center");
     }
-    const inner = cw - 44, nameY = ch - 26;
-    const size = im ? 31 : 46, lh = size * 1.4, top = ty + (im ? 22 : 40) + size * .8;
-    const lines = Math.max(1, Math.floor((nameY - 34 - top) / lh) + 1);
-    hand(g, wsh.message, RTL ? cw - 22 : 22, top, inner, size, lh, lines);
-    hand(g, wsh.name, RTL ? 22 + Math.min(inner, (g.font = `400 30px "${HAND}"`, g.measureText(wsh.name).width)) : cw - 22, nameY, inner, 30, 34, 1);
     g.restore();
   }
-  const wishPage = (list) => {
+  // pack the cards into pages: two columns, each card goes under the shorter one
+  const GAP = 30, X0 = M - 34, Y0 = M - 26;
+  function packWishes(items) {
+    const c = document.createElement("canvas").getContext("2d");
+    const w = TEX_W * W / CW, h = Math.round(TEX_W * H / W * (W / CW)), pw = TEX_W, ph = Math.round(TEX_W * H / W);
+    const cw = (pw - 2 * X0 - GAP) / 2, avail = ph - Y0 - (M - 26);
+    const pages = []; let cur = null;
+    items.forEach((it, n) => {
+      const m = measureCard(c, it, cw); m.h = Math.min(m.h, avail);
+      if (!cur) cur = { cols: [0, 0], list: [] };
+      let col = cur.cols[0] <= cur.cols[1] ? 0 : 1;
+      if (cur.cols[col] + m.h > avail && cur.list.length) { pages.push(cur); cur = { cols: [0, 0], list: [] }; col = 0; }
+      cur.list.push({ it, m, col, y: Y0 + cur.cols[col], rot: [-1.3, 1.1, .9, -1.2, 1.4, -.8][n % 6] });
+      cur.cols[col] += m.h + GAP;
+    });
+    if (cur) pages.push(cur);
+    return pages.map((pg) => wishPage(pg, cw));
+  }
+  const wishPage = (pg, cw) => {
     const face = { kind: "wishes", cards: [], draw: (g, w, h) => {
-      paper(g, w, h);
-      const gap = 34, cols = 2, rows = Math.ceil(PER / cols), top = M - 20, bottom = h - M + 20;
-      const cw = (w - 2 * (M - 30) - gap) / cols, ch = (bottom - top - gap * (rows - 1)) / rows;
-      face.cards = [];
-      list.forEach((it, n) => {
-        const c = n % cols, r = Math.floor(n / cols);
-        const x = RTL ? w - (M - 30) - (c + 1) * cw - c * gap : (M - 30) + c * (cw + gap), y = top + r * (ch + gap);
-        const rot = [-1.6, 1.2, 1.4, -1.1][n % 4];
-        wishCard(g, x, y, cw, ch, it.w, it.im, rot);
-        face.cards.push({ x, y, w: cw, h: ch, wish: it.w });
-      });
+      paper(g, w, h); face.cards = [];
+      // centre the columns vertically when the page is not full
+      const used = Math.max(...pg.cols) - GAP, off = Math.max(0, (h - Y0 - (M - 26) - used) / 2);
+      for (const c of pg.list) {
+        const x = RTL ? w - X0 - (c.col + 1) * cw - c.col * GAP : X0 + c.col * (cw + GAP);
+        wishCard(g, x, c.y + off, cw, c.m, c.it, c.rot);
+        face.cards.push({ x: x + (cw - c.m.w) / 2, y: c.y + off, w: c.m.w, h: c.m.h, wish: c.it.w, ratio: c.it.im ? c.it.im.width / c.it.im.height : 0 });
+      }
     } };
     return face;
   };
@@ -245,8 +284,7 @@ async function faces() {
       txt(g, T.invite1 + " " + T.invite2, sx(w), h - M - 30, 26, 500, INK); txt(g, T.inviteUrl, sx(w), h - M, 22, 400, GREY); }
   } };
   const endPage = { kind: "page", draw: (g, w, h) => { paper(g, w, h); txt(g, T.credit, w / 2, h / 2, 30, 400, GREY, "center"); } };
-  const items = wishes.map((w, i) => ({ w, im: wishImgs[i] })), wpages = [];
-  for (let k = 0; k < items.length; k += PER) wpages.push(wishPage(items.slice(k, k + PER)));
+  const wpages = packWishes(wishes.map((w, i) => ({ w, im: wishImgs[i] })));
   const after = [...wpages, invite];
   const rest = after.slice(1); if (rest.length % 2) rest.push(endPage);
   const pairs = []; for (let i = 0; i < rest.length; i += 2) pairs.push([rest[i], rest[i + 1]]);
@@ -501,31 +539,45 @@ function release(e) {
     if (d.moved) { if (d.dir > 0 ? d.L.p > .3 : d.L.p < .7) go(state + d.dir); return; }   // past the fold: it turns, else it falls back
     // a plain tap
     if (d.kind === "film") return video.paused ? video.play() : video.pause();
-    if (d.card) return openWish(d.card.wish);
+    if (d.card) return openWish(d.card.wish, d.card);
     if (d.kind === "back") return go(FILM, { restart: true });
     return go(state + d.dir);
   }
   if (!down) return; const dx = sideways() ? e.clientY - down.y : e.clientX - down.x; down = null;
   if (Math.abs(dx) > 40) return (dx < 0) === RTL ? prev() : next();   // swipe anywhere
-  if (tapCard) { const c = tapCard; tapCard = null; return openWish(c.wish); }
+  if (tapCard) { const c = tapCard; tapCard = null; return openWish(c.wish, c); }
   const hit = pick(e); if (!hit) return;
   const { kind } = hit.object.userData;
   if (kind === "back") return go(FILM, { restart: true });
   if (kind === "front") next();
 }
 // a guest's blessing, enlarged in the middle of the screen; a video plays right away
-const wc = $("wc"), wcImg = wc.querySelector("img"), wcVid = wc.querySelector("video");
+const wc = $("wc"), wcard = wc.querySelector(".wcard"), wm = wc.querySelector(".wmedia"), wcImg = wc.querySelector("img"), wcVid = wc.querySelector("video");
 const media = (p) => p ? `${SB}/storage/v1/object/public/matar/${p}` : "";
-function openWish(w) {
+let lastTap = { x: innerWidth / 2, y: innerHeight / 2 };
+addEventListener("pointerdown", (e) => { lastTap = { x: e.clientX, y: e.clientY }; }, true);
+function openWish(w, card) {
   autoOff = true; video.pause();
   wc.querySelector(".wmsg").textContent = w.message; wc.querySelector(".wname").textContent = w.name;
-  wc.classList.toggle("textonly", !w.photo_path && !w.video_path);
-  wcImg.hidden = !w.photo_path || !!w.video_path; wcVid.hidden = !w.video_path;
-  if (w.video_path) { wcVid.poster = media(w.photo_path); wcVid.src = media(w.video_path); wcVid.play().catch(() => {}); }
-  else if (w.photo_path) wcImg.src = media(w.photo_path);
-  wc.hidden = false; requestAnimationFrame(() => wc.classList.add("in"));
+  const hasMedia = !!(w.photo_path || w.video_path), ratio = card && card.ratio ? card.ratio : 4 / 5;
+  wc.classList.toggle("textonly", !hasMedia); wm.classList.remove("ready");
+  // the card keeps the media's own proportion, as large as fits the screen
+  const maxH = innerHeight * (hasMedia ? .6 : 1), cwid = Math.min(440, innerWidth - 40, hasMedia ? maxH * ratio + 12 : 440);
+  wcard.style.width = hasMedia ? cwid + "px" : ""; wm.style.aspectRatio = String(ratio);
+  wcImg.src = media(w.photo_path) || ""; wcImg.hidden = !w.photo_path;      // the photo (or the video's first frame) is already cached: it shows at once
+  wcVid.hidden = !w.video_path;
+  if (w.video_path) {
+    wcVid.src = media(w.video_path); wcVid.currentTime = 0;
+    wcVid.play().catch(() => {});
+  } else if (w.photo_path) { if (wcImg.complete) wm.classList.add("ready"); else wcImg.onload = () => wm.classList.add("ready"); }
+  wc.hidden = false;
+  const r = wcard.getBoundingClientRect();                          // grow out of the tapped card
+  wcard.style.transformOrigin = `${lastTap.x - r.left}px ${lastTap.y - r.top}px`;
+  requestAnimationFrame(() => requestAnimationFrame(() => wc.classList.add("in")));
 }
-const closeWish = () => { wc.classList.remove("in"); wcVid.pause(); setTimeout(() => { wc.hidden = true; wcVid.removeAttribute("src"); wcVid.load(); wcImg.removeAttribute("src"); }, 250); };
+wcVid.addEventListener("playing", () => wm.classList.add("ready", "playing"));
+wcVid.addEventListener("waiting", () => wm.classList.remove("playing"));
+const closeWish = () => { wc.classList.remove("in"); wcVid.pause(); setTimeout(() => { wc.hidden = true; wcVid.removeAttribute("src"); wcVid.load(); wcImg.removeAttribute("src"); wm.classList.remove("ready", "playing"); }, 300); };
 wc.addEventListener("click", (e) => { if (e.target === wc) closeWish(); });
 wcVid.addEventListener("click", () => (wcVid.paused ? wcVid.play() : wcVid.pause()));
 $("wcClose").onclick = closeWish;
