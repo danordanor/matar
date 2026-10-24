@@ -110,6 +110,7 @@
   .wmedia .spin { position: absolute; left: 50%; top: 50%; width: 38px; height: 38px; margin: -19px; border-radius: 50%; border: 3px solid rgba(255,255,255,.5); border-top-color: #fff; animation: spin .8s linear infinite; display: none; }
   .wmedia:not(.playing):not(.failed) video:not([hidden]) ~ .spin { display: block; }
   .wmedia.failed video { display: none; }
+  .wmedia.muted.playing::after { content: "הקישו לשמיעה 🔊"; position: absolute; left: 50%; bottom: 14px; transform: translateX(-50%); white-space: nowrap; padding: 6px 12px; border-radius: 999px; background: rgba(0,0,0,.55); color: #fff; font-size: 12px; pointer-events: none; }
   .wmedia.failed::after { content: "הסרטון לא נתמך בדפדפן הזה"; position: absolute; left: 50%; bottom: 14px; transform: translateX(-50%); white-space: nowrap; padding: 6px 12px; border-radius: 999px; background: rgba(0,0,0,.55); color: #fff; font-size: 12px; }
   @keyframes spin { to { transform: rotate(360deg); } }
   .wc.textonly .wmedia { display: none; } .wc.textonly .wcard { padding: 48px 34px 28px; width: max-content; min-width: 240px; max-width: min(440px, calc(100vw - 40px)); }

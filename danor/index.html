@@ -110,6 +110,7 @@
   .wmedia .spin { position: absolute; left: 50%; top: 50%; width: 38px; height: 38px; margin: -19px; border-radius: 50%; border: 3px solid rgba(255,255,255,.5); border-top-color: #fff; animation: spin .8s linear infinite; display: none; }
   .wmedia:not(.playing):not(.failed) video:not([hidden]) ~ .spin { display: block; }
   .wmedia.failed video { display: none; }
+  .wmedia.muted.playing::after { content: "הקישו לשמיעה 🔊"; position: absolute; left: 50%; bottom: 14px; transform: translateX(-50%); white-space: nowrap; padding: 6px 12px; border-radius: 999px; background: rgba(0,0,0,.55); color: #fff; font-size: 12px; pointer-events: none; }
   .wmedia.failed::after { content: "הסרטון לא נתמך בדפדפן הזה"; position: absolute; left: 50%; bottom: 14px; transform: translateX(-50%); white-space: nowrap; padding: 6px 12px; border-radius: 999px; background: rgba(0,0,0,.55); color: #fff; font-size: 12px; }
   @keyframes spin { to { transform: rotate(360deg); } }
   .wc.textonly .wmedia { display: none; } .wc.textonly .wcard { padding: 48px 34px 28px; width: max-content; min-width: 240px; max-width: min(440px, calc(100vw - 40px)); }
@@ -205,6 +206,6 @@
 
 <script>window.BOOK = {"name": "מטר", "sub": "תראו אותו גדל", "label": "בר מצווה", "credit": "באהבה, אמא, אבא, מידן ואייר", "line1": "שלוש עשרה שנים. סרטון אחד.", "story": "הוא הגיע אלינו קטן, גדל בבריכות, בנחלים ועל טרמפולינות, מוקף באנשים שאוהבים אותו. ועכשיו הוא בן שלוש עשרה.", "next": "לסרטון", "blurbLabel": "תקציר", "blurb": "מהבטן של אמא, דרך המגבת האדומה, הבריכות, הנחלים והטרמפולינות, ועד היום שבו הוא עולה לתורה. כל התמונות שצילמנו לאורך השנים חוזרות לחיים, בסרטון אחד.", "bless": [{"label": "מאמא ואבא", "title": "מטר שלנו,", "body": "שלוש עשרה שנים שאנחנו מסתכלים עליך גדל, ומתרגשים מחדש כל יום. אתה סקרן, מצחיק, אמיץ ועם לב ענק. תמשיך לטפס גבוה, לשאול שאלות ולהיות בדיוק מי שאתה. אנחנו תמיד פה, מאחוריך.", "sign": "מזל טוב, אמא ואבא"}, {"label": "ממידן", "title": "מטר,", "photo": "f/72.jpg", "body": "אתה האח הכי טוב בעולם. תודה שאתה משחק איתי ומצחיק אותי. אני אוהב אותך המון.", "sign": "מזל טוב, מידן"}, {"label": "מאייר", "title": "אחי,", "photo": "d/01.jpg", "body": "אחי הקטן כבר לא כל כך קטן. תודה על כל הצחוקים, המשחקים והריבים שנגמרים בצחוק. אני גאה בך ותמיד אהיה בשבילך.", "sign": "מזל טוב, אייר"}], "duo": "מטר ואייר", "fromLabel": "ברכה מאת", "inviteLabel": "ספר הברכות", "invite1": "גם אתם", "invite2": "רוצים לברך?", "inviteUrl": "danor.studio/matar/add", "again": "לצפייה שוב", "p_front": "כריכה", "p_page": "עמוד 1", "p_back": "תקציר", "dir": "rtl", "base": "../", "play": "לצפייה בסרטון", "pause": "השהיית הסרטון"};</script>
 <script src="../lib/hls.min.js"></script>
-<script type="module" src="../book.js?v=1792871095"></script>
+<script type="module" src="../book.js?v=1792871212"></script>
 </body>
 </html>

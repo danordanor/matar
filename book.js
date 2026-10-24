@@ -616,8 +616,9 @@ function openWish(w, card) {
   wcImg.src = hasPic ? media(w.photo_path) : ""; wcImg.hidden = !hasPic;      // the photo (or the video's first frame) is already cached: it shows at once
   wcVid.hidden = !w.video_path;
   if (w.video_path) {
-    wcVid.src = media(w.video_path); wcVid.currentTime = 0;
-    wcVid.play().catch(() => {});
+    wcVid.src = media(w.video_path); wcVid.currentTime = 0; wcVid.muted = false;
+    // if the browser won't allow sound here, play it muted; a tap on the video turns the sound on
+    wcVid.play().catch((e) => { if (e && e.name === "NotAllowedError") { wcVid.muted = true; wm.classList.add("muted"); wcVid.play().catch(() => {}); } });
   } else if (hasPic) { if (wcImg.complete) wm.classList.add("ready"); else { wcImg.onload = () => wm.classList.add("ready"); wcImg.onerror = () => wm.classList.add("ready"); } }
   wc.hidden = false;
   const r = wcard.getBoundingClientRect();                          // grow out of the tapped card
@@ -627,9 +628,9 @@ function openWish(w, card) {
 wcVid.addEventListener("playing", () => wm.classList.add("ready", "playing"));
 wcVid.addEventListener("waiting", () => wm.classList.remove("playing"));
 wcVid.addEventListener("error", () => { if (wc.hidden || !wcVid.getAttribute("src")) return; wm.classList.add("ready", "failed"); });
-const closeWish = () => { wc.classList.remove("in"); wcVid.pause(); setTimeout(() => { wc.hidden = true; wcVid.removeAttribute("src"); wcVid.load(); wcImg.removeAttribute("src"); wm.classList.remove("ready", "playing", "failed"); }, 300); };
+const closeWish = () => { wc.classList.remove("in"); wcVid.pause(); setTimeout(() => { wc.hidden = true; wcVid.removeAttribute("src"); wcVid.load(); wcImg.removeAttribute("src"); wm.classList.remove("ready", "playing", "failed", "muted"); }, 300); };
 wc.addEventListener("click", (e) => { if (e.target === wc) closeWish(); });
-wcVid.addEventListener("click", () => (wcVid.paused ? wcVid.play() : wcVid.pause()));
+wcVid.addEventListener("click", () => { if (wcVid.muted) { wcVid.muted = false; wm.classList.remove("muted"); return; } wcVid.paused ? wcVid.play() : wcVid.pause(); });
 $("wcClose").onclick = closeWish;
 Object.defineProperties(window.__book, Object.getOwnPropertyDescriptors({ openWish, closeWish, get state() { return state; }, get END() { return END; }, get FILM() { return FILM; }, get autoOff() { return autoOff; }, get cards() { return leaves.flatMap((L) => L.meshes.map((m) => m.userData.face)).filter((f) => f && f.cards).flatMap((f) => f.cards); } }));
 addEventListener("keydown", (e) => { if (e.key === "Escape" && !wc.hidden) { e.stopImmediatePropagation(); closeWish(); } }, true);
