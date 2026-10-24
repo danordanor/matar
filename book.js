@@ -195,26 +195,49 @@ async function faces() {
   const wishImgs = await Promise.all(wishes.map((w) => w.photo_path ? loadImg(`${SB}/storage/v1/object/public/matar/${w.photo_path}`) : null));
   const qr = await loadImg(QR_SRC);
   coverPool = [...Object.values(IMG), ...DUO, ...wishImgs, ...blessImgs].filter(Boolean);
-  const wishPage = (wsh, im) => ({ kind: "wish", video: wsh.video_path ? `${SB}/storage/v1/object/public/matar/${wsh.video_path}` : null, draw: (g, w, h) => {
-    paper(g, w, h);
-    txt(g, T.fromLabel, sx(w), M + 24, 26, 400, GREY);
-    hand(g, wsh.name, sx(w), M + 110, w - 2 * M, 64, 70, 1);
-    let y = M + 170;
+  // a guest's blessing, drawn as a small card: media on top, the words, the name at the bottom
+  const PER = 4;
+  function wishCard(g, x, y, cw, ch, wsh, im, rot) {
+    g.save(); g.translate(x + cw / 2, y + ch / 2); g.rotate(rot * Math.PI / 180); g.translate(-cw / 2, -ch / 2);
+    g.shadowColor = "rgba(40,30,10,.18)"; g.shadowBlur = 26; g.shadowOffsetY = 10;
+    g.fillStyle = "#fff"; g.beginPath(); g.roundRect(0, 0, cw, ch, 30); g.fill();
+    g.shadowColor = "transparent";
+    const pad = 10, mw = cw - pad * 2; let ty = pad;
     if (im) {
-      const bw = w - 2 * M, bh = h * .42, k = Math.min(bw / im.width, bh / im.height), pw = im.width * k, ph = im.height * k;
-      g.save(); g.translate(w / 2, y + bh / 2); g.rotate((RTL ? 1.2 : -1.2) * Math.PI / 180);
-      g.shadowColor = "rgba(0,0,0,.16)"; g.shadowBlur = 16; g.shadowOffsetY = 6; g.fillStyle = "#fff"; g.fillRect(-pw / 2 - 12, -ph / 2 - 12, pw + 24, ph + 24);
-      g.shadowColor = "transparent"; g.drawImage(im, -pw / 2, -ph / 2, pw, ph);
-      if (wsh.video_path) {   // a video wish: play badge over its first frame
-        g.fillStyle = "rgba(255,255,255,.92)"; g.beginPath(); g.arc(0, 0, 48, 0, Math.PI * 2); g.fill();
-        g.fillStyle = INK; g.beginPath(); g.moveTo(-14, -22); g.lineTo(24, 0); g.lineTo(-14, 22); g.closePath(); g.fill();
+      const mh = mw;                                   // square media, cropped like the card on /add
+      g.save(); g.beginPath(); g.roundRect(pad, pad, mw, mh, 24); g.clip();
+      const k = Math.max(mw / im.width, mh / im.height), iw = im.width * k, ih = im.height * k;
+      g.drawImage(im, pad + (mw - iw) / 2, pad + (mh - ih) / 2, iw, ih); g.restore();
+      if (wsh.video_path) {
+        const cx = pad + mw / 2, cy = pad + mh / 2;
+        g.fillStyle = "rgba(255,255,255,.92)"; g.beginPath(); g.arc(cx, cy, 34, 0, Math.PI * 2); g.fill();
+        g.fillStyle = INK; g.beginPath(); g.moveTo(cx - 10, cy - 16); g.lineTo(cx + 17, cy); g.lineTo(cx - 10, cy + 16); g.closePath(); g.fill();
       }
-      g.restore();
-      y += bh + 90;
-    } else y += 60;
-    const size = im ? 40 : 50, lh = size * 1.5, maxLines = Math.floor((h - M - 40 - y) / lh);
-    hand(g, wsh.message, sx(w), y, w - 2 * M, size, lh, maxLines);   // long wishes are kept on the page
-  } });
+      ty += mh;
+    }
+    const inner = cw - 44, nameY = ch - 26;
+    const size = im ? 31 : 46, lh = size * 1.4, top = ty + (im ? 22 : 40) + size * .8;
+    const lines = Math.max(1, Math.floor((nameY - 34 - top) / lh) + 1);
+    hand(g, wsh.message, RTL ? cw - 22 : 22, top, inner, size, lh, lines);
+    hand(g, wsh.name, RTL ? 22 + Math.min(inner, (g.font = `400 30px "${HAND}"`, g.measureText(wsh.name).width)) : cw - 22, nameY, inner, 30, 34, 1);
+    g.restore();
+  }
+  const wishPage = (list) => {
+    const face = { kind: "wishes", cards: [], draw: (g, w, h) => {
+      paper(g, w, h);
+      const gap = 34, cols = 2, rows = Math.ceil(PER / cols), top = M - 20, bottom = h - M + 20;
+      const cw = (w - 2 * (M - 30) - gap) / cols, ch = (bottom - top - gap * (rows - 1)) / rows;
+      face.cards = [];
+      list.forEach((it, n) => {
+        const c = n % cols, r = Math.floor(n / cols);
+        const x = RTL ? w - (M - 30) - (c + 1) * cw - c * gap : (M - 30) + c * (cw + gap), y = top + r * (ch + gap);
+        const rot = [-1.6, 1.2, 1.4, -1.1][n % 4];
+        wishCard(g, x, y, cw, ch, it.w, it.im, rot);
+        face.cards.push({ x, y, w: cw, h: ch, wish: it.w });
+      });
+    } };
+    return face;
+  };
   const invite = { kind: "invite", draw: (g, w, h) => {
     paper(g, w, h);
     txt(g, T.inviteLabel, sx(w), M + 24, 26, 400, GREY);
@@ -222,7 +245,9 @@ async function faces() {
       txt(g, T.invite1 + " " + T.invite2, sx(w), h - M - 30, 26, 500, INK); txt(g, T.inviteUrl, sx(w), h - M, 22, 400, GREY); }
   } };
   const endPage = { kind: "page", draw: (g, w, h) => { paper(g, w, h); txt(g, T.credit, w / 2, h / 2, 30, 400, GREY, "center"); } };
-  const after = [...wishes.map((wsh, i) => wishPage(wsh, wishImgs[i])), invite];
+  const items = wishes.map((w, i) => ({ w, im: wishImgs[i] })), wpages = [];
+  for (let k = 0; k < items.length; k += PER) wpages.push(wishPage(items.slice(k, k + PER)));
+  const after = [...wpages, invite];
   const rest = after.slice(1); if (rest.length % 2) rest.push(endPage);
   const pairs = []; for (let i = 0; i < rest.length; i += 2) pairs.push([rest[i], rest[i + 1]]);
 
@@ -273,7 +298,7 @@ function makeLeaf(f, i, n) {
   const canv = [];
   const tex = (face, mirror) => {
     const c = document.createElement("canvas"); c.width = TEX_W; c.height = Math.round(c.width * h / w); const g = c.getContext("2d"); if (mirror) { g.translate(c.width, 0); g.scale(-1, 1); }
-    face.draw(g, c.width, c.height, 0);
+    face.draw(g, c.width, c.height, 0); face.__mirror = mirror; face.__w = c.width; face.__h = c.height;
     const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = renderer.capabilities.getMaxAnisotropy();
     if (face.live) live.push({ face, g, c, t, leaf: i });
     canv.push({ c, mirror });
@@ -283,7 +308,7 @@ function makeLeaf(f, i, n) {
   const mb = new THREE.MeshStandardMaterial({ map: tex(f[1], S > 0), roughness: hard ? .85 : .95, side: THREE.BackSide });
   const a = new THREE.Mesh(geo, mf), b = new THREE.Mesh(geo, mb);
   a.castShadow = b.castShadow = true; a.receiveShadow = b.receiveShadow = true;
-  a.userData = { kind: f[0].kind, leaf: i, side: 0, video: f[0].video }; b.userData = { kind: f[1].kind, leaf: i, side: 1, video: f[1].video };
+  a.userData = { kind: f[0].kind, leaf: i, side: 0, face: f[0] }; b.userData = { kind: f[1].kind, leaf: i, side: 1, face: f[1] };
   book.add(a, b);
   const L = { i, n, w, h, hard, geo, p: 0, meshes: [a, b], canv }; place(L, 0); return L;
 }
@@ -428,15 +453,22 @@ function pick(e) {
   ray.setFromCamera(m, camera);
   return ray.intersectObjects([film, ...leaves.flatMap((l) => l.meshes)], false).filter((h) => h.object !== film || filmMat.opacity > .5)[0];
 }
-let down = null, drag = null, quietT;
+let down = null, drag = null, quietT, tapCard = null;
 const wake = () => { body.classList.remove("quiet"); clearTimeout(quietT); quietT = setTimeout(() => { if (isFull()) body.classList.add("quiet"); }, 2500); };
 ["pointermove", "pointerdown", "keydown", "touchstart"].forEach((ev) => addEventListener(ev, wake, { passive: true }));
+// which guest card is under the pointer (texture uv -> the page's own drawing coordinates)
+function cardAt(hit) {
+  const f = hit.object.userData.face; if (!f || !f.cards || !f.cards.length || !hit.uv) return null;
+  let px = hit.uv.x * f.__w; const py = (1 - hit.uv.y) * f.__h; if (f.__mirror) px = f.__w - px;
+  return f.cards.find((c) => px >= c.x && px <= c.x + c.w && py >= c.y && py <= c.y + c.h) || null;
+}
 // which leaf would a pointer-down turn, and which way
 function grab(e) {
   const hit = pick(e); if (!hit) return null;
-  const { kind, leaf, side, video } = hit.object.userData;
+  const { kind, leaf, side } = hit.object.userData;
+  const card = (leaf === state || leaf === state - 1) ? cardAt(hit) : null;
+  if (card) { const r = { L: null, dir: 0, kind, card }; if (side === 0 && leaf === state && state < END) Object.assign(r, { L: leaves[state], dir: 1 }); if (side === 1 && leaf === state - 1) Object.assign(r, { L: leaves[state - 1], dir: -1 }); return r; }
   if (kind === "film") return { L: leaves[state], dir: 1, kind };
-  if (kind === "wish" && video && (leaf === state || leaf === state - 1)) return { L: null, dir: 0, kind, video };   // a video wish on the open spread: tap plays it                 // the film spread: its left leaf is next to turn
   if (side === 0 && leaf === state && state < END) return { L: leaves[state], dir: 1, kind };
   if (side === 1 && leaf === state - 1) return { L: leaves[state - 1], dir: -1, kind };
   return { L: null, dir: 0, kind };
@@ -457,8 +489,9 @@ renderer.domElement.addEventListener("pointermove", (e) => {
 renderer.domElement.addEventListener("pointerdown", (e) => {
   down = { x: e.clientX, y: e.clientY };
   const g = grab(e);
+  tapCard = g && g.card && !g.L ? g.card : null;
   if (g && g.L && leaves.every((L) => L.p === 0 || L.p === 1)) {
-    drag = { L: g.L, dir: g.dir, x: e.clientX, y: e.clientY, moved: false, kind: g.kind }; g.L.drag = true;
+    drag = { L: g.L, dir: g.dir, x: e.clientX, y: e.clientY, moved: false, kind: g.kind, card: g.card }; g.L.drag = true;
     renderer.domElement.setPointerCapture(e.pointerId); renderer.domElement.style.cursor = "grabbing";
   }
 });
@@ -468,28 +501,35 @@ function release(e) {
     if (d.moved) { if (d.dir > 0 ? d.L.p > .3 : d.L.p < .7) go(state + d.dir); return; }   // past the fold: it turns, else it falls back
     // a plain tap
     if (d.kind === "film") return video.paused ? video.play() : video.pause();
-    if (d.kind === "wish" && d.video) return playWish(d.video);
+    if (d.card) return openWish(d.card.wish);
     if (d.kind === "back") return go(FILM, { restart: true });
     return go(state + d.dir);
   }
   if (!down) return; const dx = sideways() ? e.clientY - down.y : e.clientX - down.x; down = null;
   if (Math.abs(dx) > 40) return (dx < 0) === RTL ? prev() : next();   // swipe anywhere
+  if (tapCard) { const c = tapCard; tapCard = null; return openWish(c.wish); }
   const hit = pick(e); if (!hit) return;
-  const { kind, video: wvUrl } = hit.object.userData;
-  if (kind === "wish" && wvUrl) return playWish(wvUrl);
+  const { kind } = hit.object.userData;
   if (kind === "back") return go(FILM, { restart: true });
   if (kind === "front") next();
 }
-// a guest's video blessing plays in a small overlay above the book
-const wv = $("wv"), wvv = wv.querySelector("video");
-function playWish(url) {
+// a guest's blessing, enlarged in the middle of the screen; a video plays right away
+const wc = $("wc"), wcImg = wc.querySelector("img"), wcVid = wc.querySelector("video");
+const media = (p) => p ? `${SB}/storage/v1/object/public/matar/${p}` : "";
+function openWish(w) {
   autoOff = true; video.pause();
-  wvv.src = url; wv.hidden = false; wvv.play().catch(() => {});
+  wc.querySelector(".wmsg").textContent = w.message; wc.querySelector(".wname").textContent = w.name;
+  wc.classList.toggle("textonly", !w.photo_path && !w.video_path);
+  wcImg.hidden = !w.photo_path || !!w.video_path; wcVid.hidden = !w.video_path;
+  if (w.video_path) { wcVid.poster = media(w.photo_path); wcVid.src = media(w.video_path); wcVid.play().catch(() => {}); }
+  else if (w.photo_path) wcImg.src = media(w.photo_path);
+  wc.hidden = false; requestAnimationFrame(() => wc.classList.add("in"));
 }
-const closeWish = () => { wv.hidden = true; wvv.pause(); wvv.removeAttribute("src"); wvv.load(); };
-wv.addEventListener("click", (e) => { if (e.target === wv) closeWish(); });
-$("wvClose").onclick = closeWish;
-addEventListener("keydown", (e) => { if (e.key === "Escape" && !wv.hidden) { e.stopImmediatePropagation(); closeWish(); } }, true);
+const closeWish = () => { wc.classList.remove("in"); wcVid.pause(); setTimeout(() => { wc.hidden = true; wcVid.removeAttribute("src"); wcVid.load(); wcImg.removeAttribute("src"); }, 250); };
+wc.addEventListener("click", (e) => { if (e.target === wc) closeWish(); });
+wcVid.addEventListener("click", () => (wcVid.paused ? wcVid.play() : wcVid.pause()));
+$("wcClose").onclick = closeWish;
+addEventListener("keydown", (e) => { if (e.key === "Escape" && !wc.hidden) { e.stopImmediatePropagation(); closeWish(); } }, true);
 renderer.domElement.addEventListener("pointerup", release);
 renderer.domElement.addEventListener("pointercancel", release);
 addEventListener("keydown", (e) => {
