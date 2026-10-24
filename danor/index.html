@@ -7,7 +7,7 @@
 <meta name="description" content="תראו אותו גדל.">
 <meta property="og:title" content="מטר · בר מצווה">
 <meta property="og:description" content="תראו אותו גדל.">
-<meta property="og:image" content="../poster.jpg">
+<meta property="og:image" content="https://matar.danor.studio/poster.jpg">
 <meta name="theme-color" content="#ffffff">
 <link rel="icon" href="../icon.svg" type="image/svg+xml">
 <link rel="icon" href="../favicon-32.png" sizes="32x32" type="image/png">
@@ -58,6 +58,8 @@
   .ready #book { opacity: 1; }
   #book canvas { display: block; touch-action: none; }
 
+  .fullexit { display: none; position: fixed; top: calc(env(safe-area-inset-top, 0px) + 12px); right: 12px; z-index: 8; width: 36px; height: 36px; padding: 0; border: 0; border-radius: 50%; background: rgba(255,255,255,.16); color: #fff; place-items: center; transition: opacity .5s; }
+  .nofs.full .fullexit { display: grid; } .nofs.full.quiet .fullexit { opacity: 0; }
   .arrow { position: fixed; top: calc(50% + 14px); transform: translateY(-50%); width: 40px; height: 40px; border: 1px solid #d6d6d6; display: grid; place-items: center; background: rgba(255,255,255,.8); transition: opacity .5s var(--ease), border-color .25s; z-index: 4; }
   .arrow:hover { border-color: var(--ink); }
   .arrow svg { width: 16px; height: 16px; }
@@ -78,7 +80,7 @@
   .strip .pg:hover { opacity: .85; }
   .strip .pg.on { opacity: 1; border-color: var(--ink); outline-color: var(--ink); }
   .prog { display: flex; align-items: center; gap: 12px; direction: rtl; color: var(--ink); font-variant-numeric: tabular-nums; }
-  .prog .track { position: relative; width: min(260px, 32vw); height: 22px; cursor: pointer; }
+  .prog .track { position: relative; width: min(260px, 32vw); height: 22px; cursor: pointer; touch-action: none; }
   .prog .track::before { content: ""; position: absolute; inset-inline: 0; top: 50%; height: 1px; background: #cfcfcf; }
   .prog .fill { position: absolute; left: 0; top: 50%; height: 1px; margin-top: 0; background: var(--ink); width: 0; }
   .prog .fill.thick { height: 2px; margin-top: -.5px; }
@@ -93,9 +95,9 @@
   .full.quiet #book canvas { cursor: none; }
   /* loading: a small book whose pages keep turning, until the real one is ready */
   /* a guest's blessing, enlarged */
-  .wc { position: fixed; inset: 0; z-index: 25; background: rgba(20,18,14,0); backdrop-filter: blur(0); display: grid; place-items: center; padding: 20px; transition: background .35s, backdrop-filter .35s; }
-  .wc[hidden] { display: none; } .wc.in { background: rgba(20,18,14,.5); backdrop-filter: blur(10px); }
-  .wcard { position: relative; max-width: 100%; max-height: 92svh; overflow: auto; background: #fff; border-radius: 30px; padding: 6px 6px 20px;
+  .wc { position: fixed; inset: 0; z-index: 25; background: rgba(20,18,14,0); backdrop-filter: blur(0); -webkit-backdrop-filter: blur(0); display: grid; place-items: center; padding: 20px; transition: background .35s, backdrop-filter .35s, -webkit-backdrop-filter .35s; }
+  .wc[hidden] { display: none; } .wc.in { background: rgba(20,18,14,.5); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
+  .wcard { position: relative; max-width: 100%; max-height: 92vh; max-height: 92svh; overflow: auto; background: #fff; border-radius: 30px; padding: 6px 6px 20px;
            opacity: 0; transform: scale(.4); transition: transform .5s cubic-bezier(.2,1.2,.35,1), opacity .25s; }
   .wc.in .wcard { opacity: 1; transform: none; }
   .wmedia { position: relative; border-radius: 24px; overflow: hidden; background: linear-gradient(100deg, #f1eee7 30%, #faf8f3 50%, #f1eee7 70%); background-size: 300% 100%; animation: shimmer 1.4s linear infinite; }
@@ -106,14 +108,16 @@
   .wmedia.playing video { opacity: 1; }
   .wmedia img[hidden], .wmedia video[hidden] { display: none; }
   .wmedia .spin { position: absolute; left: 50%; top: 50%; width: 38px; height: 38px; margin: -19px; border-radius: 50%; border: 3px solid rgba(255,255,255,.5); border-top-color: #fff; animation: spin .8s linear infinite; display: none; }
-  .wmedia:not(.playing) video:not([hidden]) ~ .spin { display: block; }
+  .wmedia:not(.playing):not(.failed) video:not([hidden]) ~ .spin { display: block; }
+  .wmedia.failed video { display: none; }
+  .wmedia.failed::after { content: "הסרטון לא נתמך בדפדפן הזה"; position: absolute; left: 50%; bottom: 14px; transform: translateX(-50%); white-space: nowrap; padding: 6px 12px; border-radius: 999px; background: rgba(0,0,0,.55); color: #fff; font-size: 12px; }
   @keyframes spin { to { transform: rotate(360deg); } }
   .wc.textonly .wmedia { display: none; } .wc.textonly .wcard { padding: 48px 34px 28px; width: max-content; min-width: 240px; max-width: min(440px, calc(100vw - 40px)); }
   .wmsg { font-family: "Hand", cursive; color: #1f2d5a; font-size: 24px; line-height: 1.45; padding: 16px 18px 0; white-space: pre-wrap; }
   .wname { font-family: "Hand", cursive; color: #1f2d5a; font-size: 22px; padding: 12px 18px 0; text-align: left; }
   .wc.textonly .wmsg { font-size: 30px; text-align: center; padding: 0; }
   .wc.textonly .wname { text-align: center; padding: 16px 0 0; }
-  .wx { position: absolute; top: 14px; left: 14px; width: 32px; height: 32px; padding: 0; border: 0; border-radius: 50%; background: rgba(22,20,15,.55); color: #fff; display: flex; align-items: center; justify-content: center; cursor: pointer; backdrop-filter: blur(6px); z-index: 2; }
+  .wx { position: absolute; top: 14px; left: 14px; width: 32px; height: 32px; padding: 0; border: 0; border-radius: 50%; background: rgba(22,20,15,.55); color: #fff; display: flex; align-items: center; justify-content: center; cursor: pointer; backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); z-index: 2; }
   .wx svg { display: block; }
   .wc.textonly .wx { background: #f1eee7; color: #16140f; }
   .loader { position: fixed; inset: 0; z-index: 20; background: #fff; display: grid; place-items: center; transition: opacity .6s var(--ease), visibility 0s linear .6s; }
@@ -139,7 +143,7 @@
   video#film { position: fixed; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
   video#film:fullscreen { width: 100%; height: 100%; opacity: 1; background: #000; }
 
-  @media (max-width: 720px) {
+  @media (max-width: 720px), (max-height: 500px) {
     :root { --bar: 60px; }
     header { padding: 0 14px; gap: 8px; } .tools .wide { display: none; }
     .brand { font-size: 15px; gap: 8px; } .brand svg { width: 22px; height: 22px; }
@@ -147,6 +151,10 @@
     #addLink span { display: none; } #addLink .plus { display: block; }
     footer { grid-template-columns: auto 1fr auto; } footer .strip { display: none; }
     .arrow.l { left: 10px; } .arrow.r { right: 10px; }
+  }
+  @media (max-width: 400px) {
+    #watch { padding: 0 11px; } #watchTxt { display: none; }      /* very narrow phones: the play button keeps only its icon */
+    .brand { font-size: 14px; }
   }
   @media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition-duration: .01s !important; } }
 </style>
@@ -168,8 +176,9 @@
 <div class="glow" aria-hidden="true"><i class="a"></i><i class="b"></i><i class="c"></i><i class="d"></i></div>
 <div id="book" aria-label="מטר · בר מצווה"></div>
 
-<button class="arrow l" id="left" aria-label="left"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M10 3 5 8l5 5"/></svg></button>
-<button class="arrow r" id="right" aria-label="right"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="m6 3 5 5-5 5"/></svg></button>
+<button class="fullexit" id="fullExit" aria-label="יציאה ממסך מלא"><svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 4l8 8M12 4l-8 8"/></svg></button>
+<button class="arrow l" id="left" aria-label="אחורה"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M10 3 5 8l5 5"/></svg></button>
+<button class="arrow r" id="right" aria-label="קדימה"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="m6 3 5 5-5 5"/></svg></button>
 
 
 <footer>
@@ -196,6 +205,6 @@
 
 <script>window.BOOK = {"name": "מטר", "sub": "תראו אותו גדל", "label": "בר מצווה", "credit": "באהבה, אמא, אבא, מידן ואייר", "line1": "שלוש עשרה שנים. סרטון אחד.", "story": "הוא הגיע אלינו קטן, גדל בבריכות, בנחלים ועל טרמפולינות, מוקף באנשים שאוהבים אותו. ועכשיו הוא בן שלוש עשרה.", "next": "לסרטון", "blurbLabel": "תקציר", "blurb": "מהבטן של אמא, דרך המגבת האדומה, הבריכות, הנחלים והטרמפולינות, ועד היום שבו הוא עולה לתורה. כל התמונות שצילמנו לאורך השנים חוזרות לחיים, בסרטון אחד.", "bless": [{"label": "מאמא ואבא", "title": "מטר שלנו,", "body": "שלוש עשרה שנים שאנחנו מסתכלים עליך גדל, ומתרגשים מחדש כל יום. אתה סקרן, מצחיק, אמיץ ועם לב ענק. תמשיך לטפס גבוה, לשאול שאלות ולהיות בדיוק מי שאתה. אנחנו תמיד פה, מאחוריך.", "sign": "מזל טוב, אמא ואבא"}, {"label": "ממידן", "title": "מטר,", "photo": "f/72.jpg", "body": "אתה האח הכי טוב בעולם. תודה שאתה משחק איתי ומצחיק אותי. אני אוהב אותך המון.", "sign": "מזל טוב, מידן"}, {"label": "מאייר", "title": "אחי,", "photo": "d/01.jpg", "body": "אחי הקטן כבר לא כל כך קטן. תודה על כל הצחוקים, המשחקים והריבים שנגמרים בצחוק. אני גאה בך ותמיד אהיה בשבילך.", "sign": "מזל טוב, אייר"}], "duo": "מטר ואייר", "fromLabel": "ברכה מאת", "inviteLabel": "ספר הברכות", "invite1": "גם אתם", "invite2": "רוצים לברך?", "inviteUrl": "danor.studio/matar/add", "again": "לצפייה שוב", "p_front": "כריכה", "p_page": "עמוד 1", "p_back": "תקציר", "dir": "rtl", "base": "../", "play": "לצפייה בסרטון", "pause": "השהיית הסרטון"};</script>
 <script src="../lib/hls.min.js"></script>
-<script type="module" src="../book.js?v=1792867561"></script>
+<script type="module" src="../book.js?v=1792871095"></script>
 </body>
 </html>

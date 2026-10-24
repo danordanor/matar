@@ -12,7 +12,17 @@ const W = 1, H = 1.38, CW = W + .04, CH = H + .04, GAP = .022;   // the boards o
 const TEX_W = 1024, TEX_H = Math.round(TEX_W * CH / CW);
 const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
 const ease = (x) => x < .5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2;
-const loadImg = (src) => new Promise((r) => { const i = new Image(); if (/^https?:/.test(src)) i.crossOrigin = "anonymous"; i.onload = () => r(i); i.onerror = () => r(null); i.src = src; });
+// images: never let one stuck file hold up the book
+const loadImg = (src, ms = 8000) => new Promise((r) => {
+  const i = new Image(); if (/^https?:/.test(src)) i.crossOrigin = "anonymous";
+  const t = setTimeout(() => { i.onload = i.onerror = null; r(null); }, ms);
+  i.onload = () => { clearTimeout(t); r(i); }; i.onerror = () => { clearTimeout(t); r(null); }; i.src = src;
+});
+// canvas roundRect is missing on iOS 15 and older browsers
+if (!CanvasRenderingContext2D.prototype.roundRect) CanvasRenderingContext2D.prototype.roundRect = function (x, y, w, h, r) {
+  r = Math.min(typeof r === "number" ? r : 0, w / 2, h / 2);
+  this.moveTo(x + r, y); this.arcTo(x + w, y, x + w, y + h, r); this.arcTo(x + w, y + h, x, y + h, r); this.arcTo(x, y + h, x, y, r); this.arcTo(x, y, x + w, y, r); this.closePath();
+};
 
 // guest wishes (added by anyone through /add) live in Supabase
 const SB = "https://rjtuakbvpfookqutbych.supabase.co", SB_KEY = "sb_publishable_HhbL6xXv99EtHFn00yRfSA_w9mLKOhr";
@@ -20,8 +30,12 @@ async function fetchWishes() {
   try {
     const ctl = new AbortController(); setTimeout(() => ctl.abort(), 6000);
     const r = await fetch(`${SB}/rest/v1/matar_wishes?select=id,name,message,photo_path,video_path,created_at&hidden=eq.false&order=created_at.asc`, { headers: { apikey: SB_KEY, Authorization: "Bearer " + SB_KEY }, signal: ctl.signal });
-    return r.ok ? await r.json() : [];
-  } catch (e) { return []; }
+    if (!r.ok) return null;
+    const rows = await r.json();
+    // a row sent straight to the API could be missing fields: keep only what we can draw
+    return (Array.isArray(rows) ? rows : []).filter((w) => w && (w.message || w.photo_path || w.video_path))
+      .map((w) => ({ ...w, name: String(w.name || "").slice(0, 60), message: String(w.message || "").slice(0, 700) }));
+  } catch (e) { return null; }
 }
 const QR_SRC = (window.BOOK.base || "") + "qr.svg";
 
@@ -58,9 +72,17 @@ function txt(g, s, x, y, size, weight = 400, color = INKL, align = "start", trac
 const HAND = "Hand", PEN = "#1f2d5a";
 function handLines(g, s, maxW, size) {
   g.save(); g.font = `400 ${size}px "${HAND}"`; g.direction = T.dir;
-  const words = s.replace(/\s+/g, " ").trim().split(" "), lines = []; let line = "";
-  for (const w of words) { const t = line ? line + " " + w : w; if (g.measureText(t).width > maxW && line) { lines.push(line); line = w; } else line = t; }
-  lines.push(line); g.restore(); return lines;
+  const lines = [];
+  for (const para of String(s || "").split(/\n+/)) {
+    let line = "";
+    for (let w of para.replace(/[ \t]+/g, " ").trim().split(" ")) {
+      // a single word wider than the line (a link, a run of emoji) is cut into pieces
+      while (g.measureText(w).width > maxW && w.length > 1) { let k = w.length - 1; while (k > 1 && g.measureText(w.slice(0, k)).width > maxW) k--; if (line) { lines.push(line); line = ""; } lines.push(w.slice(0, k)); w = w.slice(k); }
+      const t = line ? line + " " + w : w; if (g.measureText(t).width > maxW && line) { lines.push(line); line = w; } else line = t;
+    }
+    if (line) lines.push(line);
+  }
+  g.restore(); return lines.length ? lines : [""];
 }
 function hand(g, s, x, y, maxW, size, lh, maxLines = 99, color = PEN, align = "start") {
   const lines = handLines(g, s, maxW, size);
@@ -85,9 +107,10 @@ function wrap(g, s, x, y, maxW, size, lh, weight = 400, color = INKL) {
 const SHOTS = [6, 18, 44, 58, 72, 86, 100, 114, 128, 146];
 const PAPER = "#f5f3ef", INK = "#141414", GREY = "#8c8a85";
 async function faces() {
-  const imgs = await Promise.all(SHOTS.map((s) => loadImg(`${BASE}f/${s}.jpg`)));
+  const wishesP = fetchWishes().then(async (list) => { const w = list || []; return { list: w, ok: !!list, imgs: await Promise.all(w.map((x) => x.photo_path ? loadImg(`${SB}/storage/v1/object/public/matar/${x.photo_path}`) : null)) }; });
+  const blessP = Promise.all(T.bless.map((b) => b.photo ? loadImg(BASE + b.photo) : null));
+  const [imgs, DUO] = await Promise.all([Promise.all(SHOTS.map((s) => loadImg(`${BASE}f/${s}.jpg`))), Promise.all(Array.from({ length: 18 }, (_, i) => loadImg(`${BASE}d/${String(i + 1).padStart(2, "0")}.jpg`)))]);
   const IMG = Object.fromEntries(SHOTS.map((s, i) => [s, imgs[i]]));
-  const DUO = await Promise.all(Array.from({ length: 18 }, (_, i) => loadImg(`${BASE}d/${String(i + 1).padStart(2, "0")}.jpg`)));
   const M = 92;
   const sx = (w) => RTL ? w - M : M;
   // the cover: six frames that keep swapping, at random, for other moments from the book
@@ -159,7 +182,7 @@ async function faces() {
     });
   } };
   // a blessing page: who it is from, the words, the signature
-  const blessImgs = await Promise.all(T.bless.map((b) => b.photo ? loadImg(BASE + b.photo) : null));
+  const blessImgs = await blessP;
   const blessing = (b, im) => ({ kind: "page", draw: (g, w, h) => {
     paper(g, w, h);
     txt(g, b.label, sx(w), M + 24, 26, 400, GREY);
@@ -196,8 +219,8 @@ async function faces() {
   const [parents, meidan, iyar] = T.bless;
 
   // ---- guest wishes: one page each, then a page inviting more ----
-  const wishes = await fetchWishes();
-  const wishImgs = await Promise.all(wishes.map((w) => w.photo_path ? loadImg(`${SB}/storage/v1/object/public/matar/${w.photo_path}`) : null));
+  const { list: wishes, ok: wishesOk, imgs: wishImgs } = await wishesP;
+  loadedWishes = wishesOk ? wishes.length : -1;
   const qr = await loadImg(QR_SRC);
   coverPool = [...Object.values(IMG), ...DUO, ...wishImgs, ...blessImgs].filter(Boolean);
   // a guest's blessing, drawn as a card sized by what is in it: the media's own proportion and the length of the words
@@ -205,17 +228,19 @@ async function faces() {
   const wordSize = (t, media) => media ? 31 : t.length < 40 ? 52 : t.length < 110 ? 44 : 36;
   function measureCard(g, it, cw) {
     const { w: wsh, im } = it, mw = cw - PAD * 2;
-    const ratio = im ? Math.min(1.35, Math.max(.62, im.height / im.width)) : 0;
-    const mh = im ? Math.round(mw * ratio) : 0;
-    const size = wordSize(wsh.message, !!im), lh = Math.round(size * 1.4);
-    const all = handLines(g, wsh.message, cw - 44, size), lines = Math.min(im ? 5 : 10, all.length);
+    const vidOnly = !im && !!wsh.video_path;
+    const ratio = im ? Math.min(1.35, Math.max(.62, im.height / im.width)) : vidOnly ? 1 : 0;
+    const mh = ratio ? Math.round(mw * ratio) : 0;
+    if (vidOnly) it.vidOnly = true;
+    const media = !!ratio, size = wordSize(wsh.message, media), lh = Math.round(size * 1.4);
+    const all = handLines(g, wsh.message, cw - 44, size), lines = Math.min(media ? 5 : 10, all.length);
     let w = cw;
-    if (!im) {   // words only: the card is as wide as its longest line (and the name)
+    if (!media) {   // words only: the card is as wide as its longest line (and the name)
       g.save(); g.font = `400 ${size}px "${HAND}"`; let lw = Math.max(...all.map((l) => g.measureText(l).width));
       g.font = `400 ${NAME}px "${HAND}"`; lw = Math.max(lw, g.measureText(wsh.name).width); g.restore();
       w = Math.round(Math.min(cw, Math.max(cw * .5, lw + 70)));
     }
-    const body = (im ? PAD + mh + 26 : 44) + lines * lh, h = body + 22 + NAME + 22;
+    const body = (media ? PAD + mh + 26 : 44) + lines * lh, h = body + 22 + NAME + 22;
     return { mh, size, lh, lines, h, w };
   }
   function wishCard(g, x, y, cw, m, it, rot) {
@@ -225,10 +250,11 @@ async function faces() {
     g.fillStyle = "#fff"; g.beginPath(); g.roundRect(0, 0, cw, m.h, 30); g.fill();
     g.strokeStyle = "rgba(22,20,15,.07)"; g.lineWidth = 2; g.stroke();          // a hairline instead of a shadow
     let ty;
-    if (im) {
+    if (m.mh) {
       g.save(); g.beginPath(); g.roundRect(PAD, PAD, mw, m.mh, 24); g.clip();
-      const k = Math.max(mw / im.width, m.mh / im.height), iw = im.width * k, ih = im.height * k;
-      g.drawImage(im, PAD + (mw - iw) / 2, PAD + (m.mh - ih) / 2, iw, ih); g.restore();
+      if (im) { const k = Math.max(mw / im.width, m.mh / im.height), iw = im.width * k, ih = im.height * k; g.drawImage(im, PAD + (mw - iw) / 2, PAD + (m.mh - ih) / 2, iw, ih); }
+      else { g.fillStyle = "#232220"; g.fillRect(PAD, PAD, mw, m.mh); }
+      g.restore();
       if (wsh.video_path) {
         const cx = PAD + mw / 2, cy = PAD + m.mh / 2;
         g.fillStyle = "rgba(255,255,255,.92)"; g.beginPath(); g.arc(cx, cy, 34, 0, Math.PI * 2); g.fill();
@@ -284,6 +310,7 @@ async function faces() {
       txt(g, T.invite1 + " " + T.invite2, sx(w), h - M - 30, 26, 500, INK); txt(g, T.inviteUrl, sx(w), h - M, 22, 400, GREY); }
   } };
   const endPage = { kind: "page", draw: (g, w, h) => { paper(g, w, h); txt(g, T.credit, w / 2, h / 2, 30, 400, GREY, "center"); } };
+  await fontsReady;                                   // card sizes depend on the handwriting font
   const wpages = packWishes(wishes.map((w, i) => ({ w, im: wishImgs[i] })));
   const after = [...wpages, invite];
   const rest = after.slice(1); if (rest.length % 2) rest.push(endPage);
@@ -387,7 +414,8 @@ spine.castShadow = true; book.add(spine);
 // ---------- the film, printed across the open spread ----------
 const video = $("film");
 const SRC = `${BASE}v/index.m3u8`;
-if (video.canPlayType("application/vnd.apple.mpegurl")) video.src = SRC;
+const APPLE = /iPhone|iPad|iPod/.test(navigator.userAgent) || (/Macintosh/.test(navigator.userAgent) && !/Chrome|Firefox|Edg/.test(navigator.userAgent));
+if (APPLE && video.canPlayType("application/vnd.apple.mpegurl")) video.src = SRC;
 else if (window.Hls && Hls.isSupported()) { const h = new Hls({ maxBufferLength: 30 }); h.loadSource(SRC); h.attachMedia(video); }
 else video.src = SRC;
 const vtex = new THREE.VideoTexture(video); vtex.colorSpace = THREE.SRGBColorSpace;
@@ -405,7 +433,7 @@ const gutter = new THREE.Mesh(new THREE.PlaneGeometry(.5, H), gutterMat);  book.
 
 // ---------- state ----------
 // 0 = front cover · 1..FILM-1 = pages · FILM = the film across the spread · END = back cover (the story)
-let state = 0, FILM = 6, END = 7;
+let state = 0, FILM = 6, END = 7, loadedWishes = -1, tvBegin = null, fontsReady = Promise.resolve();
 const body = document.body;
 const name = (s) => s === 0 ? "front" : s === END ? "back" : s === FILM ? "open" : "pages";
 function go(s, opts = {}) {
@@ -414,30 +442,45 @@ function go(s, opts = {}) {
   body.dataset.state = name(state); if (strip.children.length) markStrip();
   $("left").disabled = RTL ? state === END : state === 0;
   $("right").disabled = RTL ? state === 0 : state === END;
-  if (state === FILM) { if (opts.restart || video.ended) video.currentTime = 0; video.play().catch(() => {}); }
+  if (state === FILM) { if (opts.restart || video.ended) video.currentTime = 0; playFilm(); }
   else video.pause();
 }
 window.bookGo = go;
+// play the film; when the browser refuses sound without a tap, play it muted instead
+function playFilm() {
+  filmT0 = performance.now();
+  video.play().catch((e) => {
+    // only when the browser refuses sound (not when someone paused it a moment later)
+    if (e && e.name === "NotAllowedError" && state === FILM) { video.muted = true; video.play().catch(() => {}); }
+  });
+}
+let filmT0 = 0;
+// a tap anywhere gives the sound back
+addEventListener("pointerdown", () => { if (video.muted && !TV) { video.muted = false; } }, { capture: true });
 // ---------- TV mode (?tv): plays the book by itself in a loop, with a QR to add a wish ----------
 const TV = new URLSearchParams(location.search).has("tv");
 let WISHES = 0;
 async function tvLoop() {
-  // new wishes arrived? reload the book so they become pages
-  const n = (await fetchWishes()).length;
-  if (n + 0 !== countWishes) return location.reload();
+  // new wishes arrived? reload the book so they become pages (and carry on playing by itself after the reload)
+  const w = await fetchWishes();
+  if (w && loadedWishes >= 0 && w.length !== loadedWishes) { try { sessionStorage.setItem("tvOn", "1"); } catch (e) {} return location.reload(); }
   go(0);
 }
-let countWishes = -1, tvOn = false;
+let tvOn = false;
 if (TV) {
   document.body.classList.add("tv");
-  fetchWishes().then((w) => { countWishes = w.length; });
   const start = $("tvStart");
-  start.addEventListener("click", () => {
+  const begin = (gesture) => {
     start.remove(); tvOn = true;
-    const el = document.documentElement; try { (el.requestFullscreen || el.webkitRequestFullscreen).call(el); } catch (e) {}
-    video.muted = false; video.play().then(() => video.pause()).catch(() => {});   // unlock sound for later
-    go(1);
-  });
+    if (gesture) {
+      const el = document.documentElement; try { (el.requestFullscreen || el.webkitRequestFullscreen).call(el); } catch (e) {}
+      video.muted = false; video.play().then(() => video.pause()).catch(() => {});   // unlock sound for later
+    }
+    if (body.classList.contains("ready")) go(1); else tvBegin = () => go(1);   // on a tap the book is usually ready already
+  };
+  start.addEventListener("click", () => begin(true));
+  let again = false; try { again = sessionStorage.getItem("tvOn") === "1"; } catch (e) {}
+  if (again) begin(false);
 }
 // turn the pages by themselves once the book is open, until the video; any manual move restarts the wait
 const AUTO = 7;
@@ -460,9 +503,14 @@ function setFull(on) {
   } catch (e) {}
 }
 $("full").onclick = (e) => { e.stopPropagation(); setFull(!isFull()); };
+const fsApi = !!(document.documentElement.requestFullscreen || document.documentElement.webkitRequestFullscreen);
+if (!fsApi) body.classList.add("nofs");          // iPhone: full screen is our own layout, so it gets a close button
+$("fullExit").onclick = (e) => { e.stopPropagation(); setFull(false); };
 const fsChange = () => { if (!document.fullscreenElement && !document.webkitFullscreenElement && isFull() && !TV) document.body.classList.remove("full"); };
 document.addEventListener("fullscreenchange", fsChange); document.addEventListener("webkitfullscreenchange", fsChange);
 video.addEventListener("ended", () => setTimeout(() => { if (state === FILM) go(FILM + 1); }, 700));
+// if the film can't play at all, the book moves on by itself rather than waiting on the poster forever
+video.addEventListener("error", () => { if (state === FILM && (TV || !autoOff)) setTimeout(() => { if (state === FILM && video.paused) go(FILM + 1); }, 4000); });
 const watchTxt = $("watchTxt");
 const syncWatch = () => { const on = !video.paused && !video.ended; body.classList.toggle("playing", on); watchTxt.textContent = on ? T.pause : T.play; };
 ["play", "pause", "ended"].forEach((ev) => video.addEventListener(ev, syncWatch));
@@ -481,7 +529,7 @@ let scrub = false;
 const seekAt = (e) => { const r = track.getBoundingClientRect(); const p = clamp((e.clientX - r.left) / r.width); if (state === FILM && video.duration) video.currentTime = p * video.duration; };
 track.addEventListener("pointerdown", (e) => { if (state !== FILM) return; scrub = true; track.setPointerCapture(e.pointerId); seekAt(e); });
 track.addEventListener("pointermove", (e) => { if (scrub) seekAt(e); });
-track.addEventListener("pointerup", () => { scrub = false; });
+track.addEventListener("pointerup", () => { scrub = false; }); track.addEventListener("pointercancel", () => { scrub = false; });
 
 // ---------- pointer on the book ----------
 const ray = new THREE.Raycaster(), m = new THREE.Vector2(), look = { x: 0, y: 0 };
@@ -559,17 +607,18 @@ addEventListener("pointerdown", (e) => { lastTap = { x: e.clientX, y: e.clientY 
 function openWish(w, card) {
   autoOff = true; video.pause();
   wc.querySelector(".wmsg").textContent = w.message; wc.querySelector(".wname").textContent = w.name;
-  const hasMedia = !!(w.photo_path || w.video_path), ratio = card && card.ratio ? card.ratio : 4 / 5;
-  wc.classList.toggle("textonly", !hasMedia); wm.classList.remove("ready");
+  // a picture that failed to load in the book is treated as no picture
+  const hasPic = !!w.photo_path && !(card && !card.ratio), hasMedia = hasPic || !!w.video_path, ratio = card && card.ratio ? card.ratio : w.video_path ? 1 : 4 / 5;
+  wc.classList.toggle("textonly", !hasMedia); wm.classList.remove("ready", "failed");
   // the card keeps the media's own proportion, as large as fits the screen
   const maxH = innerHeight * (hasMedia ? .6 : 1), cwid = Math.min(440, innerWidth - 40, hasMedia ? maxH * ratio + 12 : 440);
   wcard.style.width = hasMedia ? cwid + "px" : ""; wm.style.aspectRatio = String(ratio);
-  wcImg.src = media(w.photo_path) || ""; wcImg.hidden = !w.photo_path;      // the photo (or the video's first frame) is already cached: it shows at once
+  wcImg.src = hasPic ? media(w.photo_path) : ""; wcImg.hidden = !hasPic;      // the photo (or the video's first frame) is already cached: it shows at once
   wcVid.hidden = !w.video_path;
   if (w.video_path) {
     wcVid.src = media(w.video_path); wcVid.currentTime = 0;
     wcVid.play().catch(() => {});
-  } else if (w.photo_path) { if (wcImg.complete) wm.classList.add("ready"); else wcImg.onload = () => wm.classList.add("ready"); }
+  } else if (hasPic) { if (wcImg.complete) wm.classList.add("ready"); else { wcImg.onload = () => wm.classList.add("ready"); wcImg.onerror = () => wm.classList.add("ready"); } }
   wc.hidden = false;
   const r = wcard.getBoundingClientRect();                          // grow out of the tapped card
   wcard.style.transformOrigin = `${lastTap.x - r.left}px ${lastTap.y - r.top}px`;
@@ -577,13 +626,16 @@ function openWish(w, card) {
 }
 wcVid.addEventListener("playing", () => wm.classList.add("ready", "playing"));
 wcVid.addEventListener("waiting", () => wm.classList.remove("playing"));
-const closeWish = () => { wc.classList.remove("in"); wcVid.pause(); setTimeout(() => { wc.hidden = true; wcVid.removeAttribute("src"); wcVid.load(); wcImg.removeAttribute("src"); wm.classList.remove("ready", "playing"); }, 300); };
+wcVid.addEventListener("error", () => { if (wc.hidden || !wcVid.getAttribute("src")) return; wm.classList.add("ready", "failed"); });
+const closeWish = () => { wc.classList.remove("in"); wcVid.pause(); setTimeout(() => { wc.hidden = true; wcVid.removeAttribute("src"); wcVid.load(); wcImg.removeAttribute("src"); wm.classList.remove("ready", "playing", "failed"); }, 300); };
 wc.addEventListener("click", (e) => { if (e.target === wc) closeWish(); });
 wcVid.addEventListener("click", () => (wcVid.paused ? wcVid.play() : wcVid.pause()));
 $("wcClose").onclick = closeWish;
+Object.defineProperties(window.__book, Object.getOwnPropertyDescriptors({ openWish, closeWish, get state() { return state; }, get END() { return END; }, get FILM() { return FILM; }, get autoOff() { return autoOff; }, get cards() { return leaves.flatMap((L) => L.meshes.map((m) => m.userData.face)).filter((f) => f && f.cards).flatMap((f) => f.cards); } }));
 addEventListener("keydown", (e) => { if (e.key === "Escape" && !wc.hidden) { e.stopImmediatePropagation(); closeWish(); } }, true);
 renderer.domElement.addEventListener("pointerup", release);
-renderer.domElement.addEventListener("pointercancel", release);
+// the browser took the touch (a scroll, a system gesture): drop it, it is neither a tap nor a swipe
+renderer.domElement.addEventListener("pointercancel", () => { if (drag) { drag.L && (drag.L.drag = false); drag = null; } down = null; tapCard = null; });
 addEventListener("keydown", (e) => {
   if (e.key === " ") { e.preventDefault(); state === FILM ? (video.paused ? video.play() : video.pause()) : next(); }
   else if (e.key === "ArrowLeft") RTL ? next() : prev();
@@ -668,6 +720,7 @@ function frame() {
   const still = leaves.every((L) => L.p === 0 || L.p === 1);
   if (!autoOff && still && state > 0 && state !== FILM && state < END) { autoT += dt; if (autoT > AUTO) { autoT = 0; go(state + 1); } }
   else if (still && TV && tvOn && (state === END || state === 0)) { autoT += dt; if (autoT > (state === END ? 12 : 4)) { autoT = 0; if (state === END) tvLoop(); else go(1); } }
+  else if (still && TV && tvOn && state === FILM && video.paused && performance.now() - filmT0 > 15000) { go(FILM + 1); }
   else autoT = 0;
   if (!scrub) bar();
   renderer.render(scene, camera);
@@ -675,10 +728,11 @@ function frame() {
 }
 
 (async () => {
-  await Promise.race([new Promise((r) => setTimeout(r, 2500)), Promise.all([document.fonts.load(`500 100px "${FONT}"`, "מטר Matar"), document.fonts.load(`400 30px "${FONT}"`, "מטר Matar"), document.fonts.load(`400 40px "${HAND}"`, "מטר, Matar")]).catch(() => {})]);
-  const F = await faces(); F.forEach((f, i) => leaves.push(makeLeaf(f, i, F.length))); END = F.length; FILM = F.findIndex((f) => f[0].film); WISHES = F.length;
+  const fontsP = fontsReady = Promise.race([new Promise((r) => setTimeout(r, 2500)), Promise.all([document.fonts.load(`500 100px "${FONT}"`, "מטר Matar"), document.fonts.load(`400 30px "${FONT}"`, "מטר Matar"), document.fonts.load(`400 40px "${HAND}"`, "מטר, Matar")]).catch(() => {})]);
+  const F = await faces(); await fontsP; F.forEach((f, i) => leaves.push(makeLeaf(f, i, F.length))); END = F.length; FILM = F.findIndex((f) => f[0].film); WISHES = F.length;
   buildStrip();
   go(0); camera.position.set(0, 0, fit() * 1.3);
   body.classList.add("ready");
+  if (tvBegin) setTimeout(tvBegin, 1500);
   frame();
 })();
