@@ -64,8 +64,9 @@
   .photo #live { display: none; position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); background: #111; }
   .photo.cam #live { display: block; } .photo.cam .hint { opacity: 0; }
   .photo.cam.back #live { transform: none; }
-  .camui { position: absolute; left: 0; right: 0; bottom: 14px; z-index: 4; display: none; align-items: center; justify-content: space-between; padding: 0 14px; }
-  .photo.cam .camui { display: flex; }
+  .camui { position: absolute; left: 0; right: 0; bottom: 14px; z-index: 4; display: none; grid-template-columns: 1fr auto 1fr; align-items: center; padding: 0 14px; }
+  .photo.cam .camui { display: grid; }
+  .camui .gal { justify-self: start; } .camui .flip { justify-self: end; }
   .shoot { width: 64px; height: 64px; border-radius: 50%; border: 3px solid #fff; background: rgba(255,255,255,.18); display: grid; place-items: center; cursor: pointer; backdrop-filter: blur(4px); }
   .shoot span { width: 48px; height: 48px; border-radius: 50%; background: #fff; transition: all .25s var(--ease); }
   .photo.vmode .shoot span { background: #ff3b30; }
