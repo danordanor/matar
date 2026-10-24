@@ -60,6 +60,22 @@
   .photo.vid img { display: none; }
   .photo .clear { position: absolute; top: 10px; left: 10px; z-index: 4; background: rgba(22,20,15,.72); color: #fff; border: 0; width: 28px; height: 28px; border-radius: 50%; display: none; cursor: pointer; font-size: 13px; backdrop-filter: blur(6px); }
   .photo.has .clear, .photo.vid .clear { display: grid; place-items: center; }
+  /* in-page camera */
+  .photo #live { display: none; position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); background: #111; }
+  .photo.cam #live { display: block; } .photo.cam .hint { opacity: 0; }
+  .photo.cam.back #live { transform: none; }
+  .camui { position: absolute; left: 0; right: 0; bottom: 14px; z-index: 4; display: none; align-items: center; justify-content: space-between; padding: 0 14px; }
+  .photo.cam .camui { display: flex; }
+  .shoot { width: 64px; height: 64px; border-radius: 50%; border: 3px solid #fff; background: rgba(255,255,255,.18); display: grid; place-items: center; cursor: pointer; backdrop-filter: blur(4px); }
+  .shoot span { width: 48px; height: 48px; border-radius: 50%; background: #fff; transition: all .25s var(--ease); }
+  .photo.vmode .shoot span { background: #ff3b30; }
+  .photo.recording .shoot span { width: 24px; height: 24px; border-radius: 7px; }
+  .gal, .flip { position: relative; height: 32px; min-width: 32px; padding: 0 12px; border-radius: 999px; border: 0; background: rgba(0,0,0,.42); color: #fff; font-size: 12px; display: grid; place-items: center; cursor: pointer; backdrop-filter: blur(6px); }
+  .flip { padding: 0; width: 32px; } .flip svg { width: 17px; height: 17px; }
+  .gal input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+  .timer { position: absolute; top: 12px; right: 12px; z-index: 4; display: none; padding: 4px 10px; border-radius: 999px; background: #ff3b30; color: #fff; font-size: 12px; font-variant-numeric: tabular-nums; }
+  .photo.recording .timer { display: block; }
+  .photo.recording .gal, .photo.recording .flip { visibility: hidden; }
   .photo .tag { position: absolute; bottom: 8px; right: 8px; z-index: 4; display: none; padding: 4px 9px; border-radius: 999px; background: rgba(22,20,15,.6); color: #fff; font-size: 12px; backdrop-filter: blur(6px); }
   .photo.vid .tag { display: block; }
 
@@ -111,8 +127,8 @@
     <p>הברכה תיכנס לספר הבר מצווה שלו</p>
     <div class="ways">
       <button type="button" id="wText"><i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 7h14M5 12h9M5 17h12"/></svg></i><span>במילים<small>כמה שורות בכתב יד</small></span></button>
-      <label><input type="file" id="pic" accept="image/*"><i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="18" height="13" rx="4"/><circle cx="12" cy="12.5" r="3.5"/><path d="M8.5 6l1.2-2h4.6l1.2 2"/></svg></i><span>עם תמונה<small>שלכם עם מטר</small></span></label>
-      <label><input type="file" id="cam" accept="video/*" capture="user"><i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="13" height="12" rx="4"/><path d="M16 11l5-3v8l-5-3"/></svg></i><span>בוידאו<small>צילום קצר, עד דקה</small></span></label>
+      <label id="wPic"><input type="file" id="pic" accept="image/*"><i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="18" height="13" rx="4"/><circle cx="12" cy="12.5" r="3.5"/><path d="M8.5 6l1.2-2h4.6l1.2 2"/></svg></i><span>עם תמונה<small>שלכם עם מטר</small></span></label>
+      <label id="wVid"><input type="file" id="cam" accept="video/*" capture="user"><i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="13" height="12" rx="4"/><path d="M16 11l5-3v8l-5-3"/></svg></i><span>בוידאו<small>צילום קצר, עד דקה</small></span></label>
     </div>
   </div>
   <div class="photo" id="drop">
@@ -127,6 +143,13 @@
       <span>אתם ומטר</span>
     </div>
     <img id="preview" alt="">
+    <video id="live" muted playsinline autoplay></video>
+    <span class="timer" id="timer">0:00</span>
+    <div class="camui">
+      <label class="gal"><input type="file" id="gal" accept="image/*,video/*">מהגלריה</label>
+      <button type="button" class="shoot" id="shoot" aria-label="צילום"><span></span></button>
+      <button type="button" class="flip" id="flip" aria-label="החלפת מצלמה"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8a6 6 0 0 1 11-2M16 12a6 6 0 0 1-11 2"/><path d="M15 3v3h-3M5 17v-3h3"/></svg></button>
+    </div>
     <video id="vprev" muted loop playsinline autoplay preload="auto"></video>
     <span class="tag">וידאו</span>
     <button type="button" class="clear" id="clear" aria-label="הסרה">✕</button>
@@ -206,10 +229,56 @@
       blob = null; vid = null;
     }
   }
+  // ---- in-page camera: works on computers too, and keeps videos small ----
+  const live = $("live"), shoot = $("shoot"), timer = $("timer"), gal = $("gal");
+  let stream = null, mode = "photo", facing = "user", rec = null, chunks = [], tick = null;
+  const canCam = !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia);
+  const canRec = typeof MediaRecorder !== "undefined";
+  const stopCam = () => { if (stream) stream.getTracks().forEach((t) => t.stop()); stream = null; live.srcObject = null; drop.classList.remove("cam", "vmode", "recording", "back"); clearInterval(tick); };
+  async function openCam(m) {
+    mode = m; err.textContent = ""; step2("media");
+    drop.classList.add("cam"); drop.classList.toggle("vmode", m === "video"); drop.classList.toggle("back", facing === "environment");
+    gal.accept = m === "video" ? "video/*" : "image/*";
+    try {
+      if (stream) stream.getTracks().forEach((t) => t.stop());
+      stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: facing, width: { ideal: 1280 }, height: { ideal: 1280 } }, audio: m === "video" });
+      live.srcObject = stream; await live.play().catch(() => {});
+    } catch (e) { err.textContent = "אין גישה למצלמה. אפשר לבחור מהגלריה."; }
+  }
+  const pickType = () => ["video/mp4;codecs=avc1,mp4a", "video/mp4", "video/webm;codecs=vp9,opus", "video/webm"].find((t) => MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported(t)) || "";
+  shoot.addEventListener("click", async () => {
+    if (!stream) return;
+    if (mode === "photo") {
+      const v = live, s = Math.min(v.videoWidth, v.videoHeight), c = document.createElement("canvas"); c.width = c.height = Math.min(1400, s);
+      const g = c.getContext("2d"); if (facing === "user") { g.translate(c.width, 0); g.scale(-1, 1); }
+      g.drawImage(v, (v.videoWidth - s) / 2, (v.videoHeight - s) / 2, s, s, 0, 0, c.width, c.height);
+      const b = await new Promise((res) => c.toBlob(res, "image/jpeg", .88)); stopCam();
+      blob = b; vid = null; preview.src = URL.createObjectURL(b); drop.classList.add("has"); return;
+    }
+    if (rec && rec.state === "recording") return rec.stop();
+    const type = pickType(); chunks = [];
+    rec = new MediaRecorder(stream, { ...(type ? { mimeType: type } : {}), videoBitsPerSecond: 2500000, audioBitsPerSecond: 96000 });
+    rec.ondataavailable = (e) => { if (e.data && e.data.size) chunks.push(e.data); };
+    rec.onstop = () => {
+      const t = (rec.mimeType || type || "video/mp4").split(";")[0];
+      const f = new File(chunks, "wish." + (t.includes("webm") ? "webm" : "mp4"), { type: t });
+      stopCam(); takeVideo(f).catch(() => { err.textContent = "לא הצלחנו לשמור את הסרטון. נסו שוב."; });
+    };
+    rec.start(500); drop.classList.add("recording");
+    const t0 = Date.now(); timer.textContent = "0:00";
+    tick = setInterval(() => { const s = Math.floor((Date.now() - t0) / 1000); timer.textContent = "0:" + String(s).padStart(2, "0"); if (s >= 60) rec.stop(); }, 250);
+  });
+  $("flip").addEventListener("click", () => { facing = facing === "user" ? "environment" : "user"; openCam(mode); });
+  gal.addEventListener("change", () => { stopCam(); take(gal.files[0]); });
+  // the two options open the camera when the browser has one; otherwise they stay plain file pickers
+  if (canCam) {
+    $("wPic").addEventListener("click", (e) => { e.preventDefault(); openCam("photo"); });
+    if (canRec) $("wVid").addEventListener("click", (e) => { e.preventDefault(); openCam("video"); });
+  }
   file.addEventListener("change", () => take(file.files[0]));
   pic.addEventListener("change", () => take(pic.files[0]));
   cam.addEventListener("change", () => take(cam.files[0]));
-  $("clear").addEventListener("click", (e) => { e.preventDefault(); e.stopPropagation(); blob = null; vid = null; file.value = ""; pic.value = ""; cam.value = ""; vprev.pause(); vprev.removeAttribute("src"); drop.classList.remove("has", "vid"); card.classList.remove("step2", "text"); });
+  $("clear").addEventListener("click", (e) => { e.preventDefault(); e.stopPropagation(); if (rec && rec.state === "recording") { rec.onstop = null; rec.stop(); } stopCam(); blob = null; vid = null; file.value = ""; pic.value = ""; cam.value = ""; gal.value = ""; vprev.pause(); vprev.removeAttribute("src"); drop.classList.remove("has", "vid"); card.classList.remove("step2", "text"); });
 
   $("f").addEventListener("submit", async (e) => {
     e.preventDefault(); err.textContent = "";
@@ -226,16 +295,19 @@
       }
       if (vid) {
         send.textContent = "מעלים את הסרטון…";
-        const ext = (vid.type.split("/")[1] || "mp4").replace("quicktime", "mov");
+        let type = (vid.type || "").split(";")[0];
+        if (!type) type = /\.mov$/i.test(vid.name) ? "video/quicktime" : /\.webm$/i.test(vid.name) ? "video/webm" : "video/mp4";
+        const ext = { "video/quicktime": "mov", "video/webm": "webm", "video/x-m4v": "m4v" }[type] || "mp4";
         video_path = "wishes/" + id + "." + ext;
-        const up = await fetch(`${SB}/storage/v1/object/matar/${video_path}`, { method: "POST", headers: { ...H, "Content-Type": vid.type || "video/mp4" }, body: vid });
-        if (!up.ok) throw new Error("upload " + up.status);
+        const up = await fetch(`${SB}/storage/v1/object/matar/${video_path}`, { method: "POST", headers: { ...H, "Content-Type": type }, body: vid });
+        if (!up.ok) throw new Error(up.status === 413 ? "big" : "upload " + up.status);
       }
       const r = await fetch(`${SB}/rest/v1/matar_wishes`, { method: "POST", headers: { ...H, "Content-Type": "application/json", Prefer: "return=minimal" }, body: JSON.stringify({ name, message, photo_path, video_path }) });
       if (!r.ok) throw new Error("insert " + r.status);
       document.body.classList.add("sent");
     } catch (e2) {
-      err.textContent = "משהו לא עבד. נסו שוב בעוד רגע."; send.disabled = false; send.textContent = "שליחת הברכה";
+      console.warn(e2);
+      err.textContent = e2.message === "big" ? "הסרטון ארוך מדי. נסו סרטון קצר יותר." : "משהו לא עבד. נסו שוב בעוד רגע."; send.disabled = false; send.textContent = "שליחת הברכה";
     }
   });
 })();
