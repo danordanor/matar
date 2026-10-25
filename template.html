@@ -142,6 +142,16 @@
   .tv .tvstart { display: grid; place-items: center; position: fixed; inset: 0; z-index: 9; background: rgba(255,255,255,.55); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); cursor: pointer; border: 0; }
   .tv .tvstart span { background: var(--ink); color: #fff; padding: 18px 32px; font-size: 20px; font-weight: 500; }
   video#film { position: fixed; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+  /* phone: the video alone, full screen */
+  .vfull { position: fixed; inset: 0; z-index: 40; background: #000; }
+  .vfull[hidden] { display: none; }
+  .vfull video#film { position: absolute; left: 50%; top: 50%; width: 100vw; height: 100vh; height: 100dvh; transform: translate(-50%, -50%); opacity: 1; pointer-events: none; object-fit: contain; background: #000; }
+  @media (orientation: portrait) {   /* held upright: lay the video along the long side */
+    .vfull video#film { width: 100vh; width: 100dvh; height: 100vw; transform: translate(-50%, -50%) rotate(90deg); }
+  }
+  .vfullx { position: absolute; top: calc(env(safe-area-inset-top, 0px) + 14px); right: 14px; z-index: 2; width: 40px; height: 40px; padding: 0; border: 0; border-radius: 50%; background: rgba(255,255,255,.14); color: #fff; display: grid; place-items: center; transition: opacity .5s; }
+  .vfull.calm .vfullx { opacity: 0; }
+  body.vfullon { overflow: hidden; }
   video#film:fullscreen { width: 100%; height: 100%; opacity: 1; background: #000; }
 
   @media (max-width: 720px), (max-height: 500px) {
@@ -202,6 +212,7 @@
 <button class="tvstart" id="tvStart"><span>{{tv_start}}</span></button>
 
 <video id="film" playsinline preload="auto" poster="{{base}}poster.jpg"></video>
+<div class="vfull" id="vfull" hidden><button class="vfullx" id="vfullX" aria-label="סגירה"><svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 4l8 8M12 4l-8 8"/></svg></button></div>
 <div class="wc" id="wc" hidden><div class="wcard"><div class="wmedia"><img alt=""><video playsinline loop preload="auto"></video><i class="spin"></i></div><p class="wmsg"></p><p class="wname"></p><button class="wx" id="wcClose" aria-label="סגירה"><svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 4l8 8M12 4l-8 8"/></svg></button></div></div>
 
 <script>window.BOOK = {{book_json}};</script>

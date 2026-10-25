@@ -502,7 +502,31 @@ function setFull(on) {
     if (!on && (document.fullscreenElement || document.webkitFullscreenElement)) (document.exitFullscreen || document.webkitExitFullscreen).call(document);
   } catch (e) {}
 }
-$("full").onclick = (e) => { e.stopPropagation(); setFull(!isFull()); };
+// on a phone, full screen means the video alone: nothing around it, turned sideways to use the whole screen
+const PHONE = matchMedia("(pointer: coarse)").matches && Math.min(screen.width, screen.height) < 700;
+const vfull = $("vfull"); let vfullT;
+function vfullWake() { vfull.classList.remove("calm"); clearTimeout(vfullT); vfullT = setTimeout(() => vfull.classList.add("calm"), 2500); }
+function openVideoFull() {
+  vfull.appendChild(video); vfull.hidden = false; body.classList.add("vfullon");
+  go(FILM, { restart: video.ended }); video.muted = false; video.play().catch(() => {});
+  if (video.webkitEnterFullscreen && !document.fullscreenEnabled) { try { video.webkitEnterFullscreen(); } catch (e) {} }   // iPhone: the system player, truly full screen
+  else { try { (vfull.requestFullscreen || vfull.webkitRequestFullscreen).call(vfull).then?.(() => screen.orientation?.lock?.("landscape").catch(() => {})); } catch (e) {} }
+  vfullWake();
+}
+function closeVideoFull() {
+  if (vfull.hidden) return;
+  vfull.hidden = true; body.classList.remove("vfullon"); body.appendChild(video);
+  try { screen.orientation?.unlock?.(); } catch (e) {}
+  if (document.fullscreenElement || document.webkitFullscreenElement) { try { (document.exitFullscreen || document.webkitExitFullscreen).call(document); } catch (e) {} }
+  video.play().catch(() => {});      // keep playing on the page
+}
+vfull.addEventListener("click", (e) => { if (e.target.closest("#vfullX")) return; if (!vfull.classList.contains("calm")) { video.paused ? video.play() : video.pause(); } vfullWake(); });
+$("vfullX").onclick = (e) => { e.stopPropagation(); closeVideoFull(); };
+video.addEventListener("webkitendfullscreen", closeVideoFull);
+document.addEventListener("fullscreenchange", () => { if (!document.fullscreenElement && !vfull.hidden) closeVideoFull(); });
+video.addEventListener("ended", () => { if (!vfull.hidden) closeVideoFull(); });
+addEventListener("keydown", (e) => { if (e.key === "Escape" && !vfull.hidden) { e.stopImmediatePropagation(); closeVideoFull(); } }, true);
+$("full").onclick = (e) => { e.stopPropagation(); if (PHONE && !TV) return openVideoFull(); setFull(!isFull()); };
 const fsApi = !!(document.documentElement.requestFullscreen || document.documentElement.webkitRequestFullscreen);
 if (!fsApi) body.classList.add("nofs");          // iPhone: full screen is our own layout, so it gets a close button
 $("fullExit").onclick = (e) => { e.stopPropagation(); setFull(false); };
