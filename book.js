@@ -29,7 +29,10 @@ const SB = "https://rjtuakbvpfookqutbych.supabase.co", SB_KEY = "sb_publishable_
 async function fetchWishes() {
   try {
     const ctl = new AbortController(); setTimeout(() => ctl.abort(), 6000);
-    const r = await fetch(`${SB}/rest/v1/matar_wishes?select=id,name,message,photo_path,video_path,created_at&hidden=eq.false&order=created_at.asc`, { headers: { apikey: SB_KEY, Authorization: "Bearer " + SB_KEY }, signal: ctl.signal });
+    const url = (extra) => `${SB}/rest/v1/matar_wishes?select=id,name,message,photo_path,video_path,created_at&hidden=eq.false${extra}&order=created_at.asc`;
+    const opts = { headers: { apikey: SB_KEY, Authorization: "Bearer " + SB_KEY }, signal: ctl.signal };
+    let r = await fetch(url("&approved=eq.true"), opts);
+    if (r.status === 400) r = await fetch(url(""), opts);   // before the approval step exists in the database
     if (!r.ok) return null;
     const rows = await r.json();
     // a row sent straight to the API could be missing fields: keep only what we can draw
@@ -255,11 +258,6 @@ async function faces() {
       if (im) { const k = Math.max(mw / im.width, m.mh / im.height), iw = im.width * k, ih = im.height * k; g.drawImage(im, PAD + (mw - iw) / 2, PAD + (m.mh - ih) / 2, iw, ih); }
       else { g.fillStyle = "#232220"; g.fillRect(PAD, PAD, mw, m.mh); }
       g.restore();
-      if (wsh.video_path) {
-        const cx = PAD + mw / 2, cy = PAD + m.mh / 2;
-        g.fillStyle = "rgba(255,255,255,.92)"; g.beginPath(); g.arc(cx, cy, 34, 0, Math.PI * 2); g.fill();
-        g.fillStyle = INK; g.beginPath(); g.moveTo(cx - 10, cy - 16); g.lineTo(cx + 17, cy); g.lineTo(cx - 10, cy + 16); g.closePath(); g.fill();
-      }
       ty = PAD + m.mh + 26 + m.size * .8;
       hand(g, wsh.message, RTL ? cw - 22 : 22, ty, cw - 44, m.size, m.lh, m.lines);
       g.font = `400 ${NAME}px "${HAND}"`; const nw = Math.min(cw - 44, g.measureText(wsh.name).width);

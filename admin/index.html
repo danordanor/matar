@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<title>אישור ברכות</title>
+<link rel="icon" href="../icon.svg" type="image/svg+xml">
+<style>
+  @font-face { font-family: "Swiss"; font-weight: 400; src: url(../fonts/plex-hebrew-400.woff2) format("woff2"); unicode-range: U+0590-05FF, U+200C-2010, U+20AA, U+25CC, U+FB1D-FB4F; }
+  @font-face { font-family: "Swiss"; font-weight: 500; src: url(../fonts/plex-hebrew-500.woff2) format("woff2"); unicode-range: U+0590-05FF, U+200C-2010, U+20AA, U+25CC, U+FB1D-FB4F; }
+  @font-face { font-family: "Swiss"; font-weight: 400; src: url(../fonts/plex-latin-400.woff2) format("woff2"); unicode-range: U+0000-00FF, U+2000-206F; }
+  @font-face { font-family: "Hand"; font-weight: 400; src: url(../fonts/hand-hebrew-400.woff2) format("woff2"); unicode-range: U+0590-05FF, U+200C-2010, U+20AA, U+25CC, U+FB1D-FB4F; }
+  :root { --ink: #16140f; --pen: #1f2d5a; --soft: #9a948a; --line: rgba(22,20,15,.08); }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: "Swiss", system-ui, sans-serif; color: var(--ink); background: #f5f3ef; -webkit-font-smoothing: antialiased; min-height: 100vh; }
+  button { font: inherit; color: inherit; cursor: pointer; }
+  header { position: sticky; top: 0; z-index: 2; background: rgba(245,243,239,.9); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); padding: 18px 20px 12px; }
+  h1 { font-size: 20px; font-weight: 500; }
+  .tabs { display: flex; gap: 6px; margin-top: 12px; overflow-x: auto; }
+  .tabs button { height: 34px; padding: 0 14px; border-radius: 999px; border: 0; background: #fff; font-size: 13px; white-space: nowrap; box-shadow: 0 0 0 1px var(--line); }
+  .tabs button.on { background: var(--ink); color: #fff; box-shadow: none; }
+  .tabs b { font-weight: 500; opacity: .55; margin-inline-start: 4px; }
+  main { padding: 8px 16px 40px; display: grid; gap: 12px; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); max-width: 1100px; margin: 0 auto; }
+  .w { background: #fff; border-radius: 24px; padding: 6px; display: flex; flex-direction: column; box-shadow: 0 0 0 1px var(--line); }
+  .w .m { border-radius: 18px; overflow: hidden; background: #ebe7dd; aspect-ratio: 4 / 3; }
+  .w .m img, .w .m video { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .w .t { padding: 12px 12px 4px; flex: 1; }
+  .w .msg { font-family: "Hand", cursive; color: var(--pen); font-size: 20px; line-height: 1.4; white-space: pre-wrap; word-break: break-word; }
+  .w .nm { font-family: "Hand", cursive; color: var(--pen); font-size: 18px; margin-top: 8px; text-align: left; }
+  .w .meta { font-size: 11px; color: var(--soft); padding: 0 12px 8px; display: flex; justify-content: space-between; }
+  .chip { padding: 2px 8px; border-radius: 999px; background: #f1eee7; }
+  .chip.wait { background: #fff2c2; } .chip.on { background: #e3f1e3; } .chip.off { background: #f3e2df; }
+  .acts { display: flex; gap: 6px; }
+  .acts button { flex: 1; height: 42px; border-radius: 999px; border: 0; font-size: 14px; font-weight: 500; }
+  .ok { background: var(--ink); color: #fff; }
+  .no { background: #f1eee7; }
+  .empty { grid-column: 1 / -1; text-align: center; color: var(--soft); padding: 60px 0; font-size: 14px; }
+  .err { grid-column: 1 / -1; text-align: center; color: #b3261e; padding: 60px 20px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>אישור ברכות</h1>
+  <div class="tabs" id="tabs">
+    <button data-f="wait" class="on">ממתינות<b id="c-wait"></b></button>
+    <button data-f="on">בספר<b id="c-on"></b></button>
+    <button data-f="off">הוסרו<b id="c-off"></b></button>
+  </div>
+</header>
+<main id="list"></main>
+<script>
+(() => {
+  // only someone with the private link (?k=…) can see and change this; the key is kept on this device
+  const SB = "https://rjtuakbvpfookqutbych.supabase.co", KEY = "sb_publishable_HhbL6xXv99EtHFn00yRfSA_w9mLKOhr";
+  const H = { apikey: KEY, Authorization: "Bearer " + KEY, "Content-Type": "application/json" };
+  const q = new URLSearchParams(location.search);
+  let k = q.get("k"); try { if (k) localStorage.setItem("matarAdmin", k); else k = localStorage.getItem("matarAdmin"); } catch (e) {}
+  if (q.get("k")) history.replaceState(null, "", location.pathname);
+  const list = document.getElementById("list"), media = (p) => `${SB}/storage/v1/object/public/matar/${p}`;
+  let rows = [], filter = "wait";
+  const status = (w) => w.approved && !w.hidden ? "on" : w.hidden ? "off" : "wait";
+  const rpc = (fn, body) => fetch(`${SB}/rest/v1/rpc/${fn}`, { method: "POST", headers: H, body: JSON.stringify(body) });
+  async function load() {
+    if (!k) return list.innerHTML = '<p class="err">צריך לפתוח את הדף מהקישור הפרטי.</p>';
+    const r = await rpc("matar_admin_list", { k }).catch(() => null);
+    if (!r || !r.ok) return list.innerHTML = '<p class="err">לא הצלחנו לטעון. בדקו את הקישור ונסו שוב.</p>';
+    rows = await r.json(); draw();
+  }
+  const esc = (s) => String(s || "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
+  function draw() {
+    ["wait", "on", "off"].forEach((f) => { document.getElementById("c-" + f).textContent = rows.filter((w) => status(w) === f).length || ""; });
+    const show = rows.filter((w) => status(w) === filter);
+    if (!show.length) return list.innerHTML = `<p class="empty">${filter === "wait" ? "אין ברכות שממתינות לאישור" : filter === "on" ? "עוד אין ברכות בספר" : "לא הוסרו ברכות"}</p>`;
+    list.innerHTML = show.map((w) => `
+      <article class="w" data-id="${w.id}">
+        ${w.video_path ? `<div class="m"><video src="${media(w.video_path)}" ${w.photo_path ? `poster="${media(w.photo_path)}"` : ""} controls playsinline preload="metadata"></video></div>` : w.photo_path ? `<div class="m"><img src="${media(w.photo_path)}" alt="" loading="lazy"></div>` : ""}
+        <div class="t"><p class="msg">${esc(w.message)}</p><p class="nm">${esc(w.name)}</p></div>
+        <div class="meta"><span>${new Date(w.created_at).toLocaleString("he-IL", { day: "numeric", month: "numeric", hour: "2-digit", minute: "2-digit" })}</span><span class="chip ${status(w)}">${{ wait: "ממתינה", on: "בספר", off: "הוסרה" }[status(w)]}</span></div>
+        <div class="acts">
+          ${status(w) !== "on" ? `<button class="ok" data-a="1">${status(w) === "off" ? "להחזיר לספר" : "לאשר"}</button>` : ""}
+          ${status(w) !== "off" ? `<button class="no" data-a="0">${status(w) === "on" ? "להסיר מהספר" : "לא לאשר"}</button>` : ""}
+        </div>
+      </article>`).join("");
+  }
+  list.addEventListener("click", async (e) => {
+    const b = e.target.closest("button[data-a]"); if (!b) return;
+    const card = b.closest(".w"), id = card.dataset.id, show = b.dataset.a === "1";
+    b.disabled = true; b.textContent = "…";
+    const r = await rpc("matar_admin_set", { k, wid: id, show }).catch(() => null);
+    if (!r || !r.ok) { b.disabled = false; b.textContent = "נסו שוב"; return; }
+    const w = rows.find((x) => x.id === id); w.approved = show; w.hidden = !show; draw();
+  });
+  document.getElementById("tabs").addEventListener("click", (e) => {
+    const b = e.target.closest("button"); if (!b) return; filter = b.dataset.f;
+    document.querySelectorAll("#tabs button").forEach((x) => x.classList.toggle("on", x === b)); draw();
+  });
+  load();
+})();
+</script>
+</body>
+</html>
