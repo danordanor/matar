@@ -36,7 +36,7 @@ KEYS = ["lang", "dir", "base", "title", "desc", "name", "top", "play", "pause", 
 HERE = os.path.dirname(os.path.abspath(__file__))
 # LOCKED: guests at / see only the lock page; the book lives at /danor/ (the private link).
 # Set LOCKED = False to put the book back at / for everyone.
-LOCKED = True
+LOCKED = False
 import time; V = str(int(time.time()))
 
 def book(base, out):
